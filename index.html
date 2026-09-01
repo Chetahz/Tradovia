@@ -913,6 +913,64 @@ html[data-theme="dark"] .cal34-loss.cal34-strong{background:rgba(248,113,113,.11
 @media(max-width:360px){.risk343-spec-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="tradovia-v34-4-gold-precision-simplified">
+.risk344-broker-card{margin-top:14px;border:1px solid var(--line);border-radius:18px;padding:15px;background:color-mix(in srgb,var(--panel) 94%,transparent)}
+.risk344-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.risk344-precision{padding:6px 9px;border-radius:999px;border:1px solid var(--line);font-size:8px;font-weight:950;color:var(--muted);white-space:nowrap}
+.risk344-precision.ready{color:#16a34a;background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.20)}
+.risk344-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.risk344-grid>div{display:grid;gap:4px;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--text) 2%,transparent);border:1px solid var(--line)}
+.risk344-grid span{font-size:8px;color:var(--muted)}.risk344-grid b{font-size:11px}
+.risk344-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:13px;border:1px solid var(--line)}
+.risk344-status>div{display:grid;gap:3px}.risk344-status b{font-size:10px}.risk344-status span{font-size:8px;color:var(--muted);line-height:1.45}
+.risk344-status.confirmed{background:rgba(22,163,74,.04);border-color:rgba(22,163,74,.16)}
+.risk344-status.reference{background:rgba(217,119,6,.035);border-color:rgba(217,119,6,.14)}
+.risk344-status.neutral{background:color-mix(in srgb,var(--text) 1.8%,transparent)}
+.risk344-status-pill{font-size:7px!important;color:#16a34a!important;font-weight:950;border-radius:999px;padding:5px 7px;border:1px solid rgba(22,163,74,.18)}
+.risk344-inline{border:0;background:transparent;color:#d97706;font-size:9px;font-weight:950;white-space:nowrap}
+.risk344-advanced-btn{margin-top:11px;border:0;background:transparent;color:var(--muted);font-size:9px;font-weight:850;text-decoration:underline;text-underline-offset:3px}
+.risk344-advanced-title{font-size:10px;font-weight:950}
+@media(max-width:767px){
+ .risk344-broker-card{padding:13px;border-radius:16px}
+ .risk344-grid{grid-template-columns:1fr 1fr}
+ .risk344-status{align-items:flex-start}
+ .risk344-status.reference{display:grid}
+ .risk344-inline{text-align:left;padding:0}
+}
+</style>
+
+
+<style id="tradovia-v34-5-xauusd-auto-r">
+.risk345-auto-card{margin-top:14px;border:1px solid var(--line);border-radius:18px;padding:15px;background:color-mix(in srgb,var(--panel) 94%,transparent)}
+.risk345-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+@media(max-width:767px){
+ .risk345-auto-card{padding:13px;border-radius:16px}
+}
+</style>
+
+
+<style id="tradovia-v34-6-simple-auto-r">
+.risk346-summary{margin-top:14px;padding:15px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--panel) 94%,transparent)}
+.risk346-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.risk346-card{position:relative}
+.risk346-help{font-size:8.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+.risk346-note{margin-top:11px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:9px;color:var(--muted);line-height:1.55;background:color-mix(in srgb,var(--text) 1.5%,transparent)}
+.risk346-note.ok{border-color:rgba(22,163,74,.16);background:rgba(22,163,74,.035)}
+.risk346-note.caution{border-color:rgba(217,119,6,.16);background:rgba(217,119,6,.035)}
+@media(max-width:767px){
+ .risk346-summary{padding:13px;border-radius:16px}
+ .risk346-summary .r-preview{grid-template-columns:1fr 1fr!important}
+ .risk346-summary .r-preview .risk346-card:last-child{grid-column:1/-1}
+ .risk346-card{padding:12px!important}
+ .risk346-help{font-size:8px}
+}
+@media(max-width:380px){
+ .risk346-summary .r-preview{grid-template-columns:1fr!important}
+ .risk346-summary .r-preview .risk346-card:last-child{grid-column:auto}
+}
+</style>
+
 </head>
 <body>
 <div id="landing" class="min-h-screen">
@@ -2179,30 +2237,32 @@ function openTrade(editId=null){
       <input id="trade_r" type="hidden" value="${esc(v('r',''))}">
     </div>
 
-    <div class="risk343-spec-card">
-      <div class="risk343-spec-head">
-        <div><div class="smallcap">INSTRUMENT SPECIFICATION</div><div class="font-black mt-1">${th?'สเปกที่ใช้คำนวณความเสี่ยง':'Specification used for monetary risk'}</div></div>
-        <span id="tradeSpecBadge" class="risk343-badge pending">${th?'ต้องตรวจสอบ':'REQUIRED'}</span>
-      </div>
-      <div id="tradeSpecSummary" class="risk343-spec-summary"></div>
-      <div id="tradeSpecEditor" class="risk343-spec-editor hidden">
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs muted">Tick Size</label><input id="trade_spec_tickSize" class="field mt-1" type="number" step="any" inputmode="decimal" placeholder="0.01"></div>
-          <div><label class="text-xs muted">Tick Value / 1 Lot ($)</label><input id="trade_spec_tickValue" class="field mt-1" type="number" step="any" inputmode="decimal" placeholder="1.00"></div>
-          <div><label class="text-xs muted">${th?'Contract Size (อ้างอิง)':'Contract Size (reference)'}</label><input id="trade_spec_contractSize" class="field mt-1" type="number" step="any" inputmode="decimal" placeholder="100"></div>
-          <div><label class="text-xs muted">${th?'สกุลกำไร':'Profit Currency'}</label><input id="trade_spec_profitCurrency" class="field mt-1" value="USD" maxlength="8"></div>
+    <div class="risk346-summary">
+      <div class="risk346-title">
+        <div>
+          <div class="smallcap">${th?'คำนวณอัตโนมัติ':'AUTO CALCULATED'}</div>
+          <div class="font-black mt-1">${th?'Tradovia คำนวณจากข้อมูลที่คุณกรอกให้ทันที':'Tradovia calculates these values from your trade inputs'}</div>
         </div>
-        <div class="risk343-spec-note">${th?'ตรวจค่าจาก Contract Specification ของบัญชีโบรกเกอร์คุณก่อนยืนยัน Tradovia จะจำค่านี้สำหรับ Symbol นี้บนอุปกรณ์นี้':'Verify these values against your broker account Contract Specification before confirming. Tradovia will remember this symbol specification on this device.'}</div>
-        <div class="flex flex-wrap gap-2 mt-3"><button type="button" class="btn btn-primary" onclick="saveConfirmedTradeSpec()">${th?'ยืนยันสเปกนี้':'Confirm specification'}</button><button type="button" class="btn" onclick="closeTradeSpecEditor()">${th?'ยกเลิก':'Cancel'}</button></div>
       </div>
+      <div class="r-preview">
+        <div class="r-card risk346-card">
+          <div class="r-label">${th?'R:R ตามแผน':'Planned R:R'}</div>
+          <div id="tradePlannedRR" class="r-value green">—</div>
+          <div class="risk346-help">${th?'ถ้าราคาถึง TP แผนนี้จะได้กี่ R':'How many R if price reaches TP'}</div>
+        </div>
+        <div class="r-card risk346-card">
+          <div class="r-label">${th?'ความเสี่ยงเริ่มต้น':'Initial Risk'}</div>
+          <div id="tradeRiskMoney" class="r-value red">—</div>
+          <div id="tradeRiskSource" class="risk346-help">${th?'ถ้าโดน Initial SL จะเสียประมาณเท่าไร':'Approx. loss if Initial SL is hit'}</div>
+        </div>
+        <div class="r-card risk346-card">
+          <div class="r-label">${th?'ผลลัพธ์จริง':'Realized R'}</div>
+          <div id="tradeRealizedR" class="r-value">—</div>
+          <div class="risk346-help">${th?'ผลปิดจริงคิดเป็นกี่เท่าของความเสี่ยง':'Closed result ÷ initial risk'}</div>
+        </div>
+      </div>
+      <div id="tradeRiskIntegrityNote" class="risk346-note">${th?'กรอก Entry, Initial SL, TP, Lot และ Realized Net P&L — Tradovia จะคำนวณส่วนที่เหลือให้เอง':'Enter Entry, Initial SL, TP, Lot and Realized Net P&L — Tradovia calculates the rest automatically.'}</div>
     </div>
-
-    <div class="r-preview">
-      <div class="r-card"><div class="r-label">${th?'R:R ตามแผน':'Planned R:R'}</div><div id="tradePlannedRR" class="r-value green">—</div><div class="risk343-sub">Entry → SL → TP</div></div>
-      <div class="r-card"><div class="r-label">${th?'ความเสี่ยงเริ่มต้น':'Initial Risk'}</div><div id="tradeRiskMoney" class="r-value red">—</div><div id="tradeRiskSource" class="risk343-sub">${th?'รอสเปกสินทรัพย์':'Waiting for specification'}</div></div>
-      <div class="r-card"><div class="r-label">${th?'ผลลัพธ์จริง':'Realized R'}</div><div id="tradeRealizedR" class="r-value">—</div><div class="risk343-sub">Net P&L ÷ Initial Risk</div></div>
-    </div>
-    <div id="tradeRiskIntegrityNote" class="r-help">${th?'Tradovia จะคำนวณ Initial Risk และ Realized R ให้อัตโนมัติเฉพาะเมื่อมี Instrument Specification ที่ยืนยันแล้ว ระบบจะไม่เดาความเสี่ยงเป็นเงินจากชื่อ Symbol อย่างเดียว':'Tradovia only calculates Initial Risk and Realized R when a confirmed Instrument Specification is available. Monetary risk is never guessed from the symbol name alone.'}</div>
     <div id="trade-sec-context" class="trade-section-title">${th?'แผนและบริบท':'Setup & context'}</div>
     <div class="grid md:grid-cols-2 gap-3">
       <div>
@@ -2246,73 +2306,81 @@ function toggleCustomTradeField(id){
 
 /* V34.3 — Instrument Specification Engine.
    Reference presets only prefill. No monetary R until user confirms the exact symbol specification. */
-const tradoviaReferenceSpecs={
- XAUUSD:{tickSize:0.01,tickValue:1,contractSize:100,profitCurrency:'USD'},
- XAGUSD:{tickSize:0.001,tickValue:0.05,contractSize:5000,profitCurrency:'USD'},
- EURUSD:{tickSize:0.00001,tickValue:1,contractSize:100000,profitCurrency:'USD'},
- GBPUSD:{tickSize:0.00001,tickValue:1,contractSize:100000,profitCurrency:'USD'},
- AUDUSD:{tickSize:0.00001,tickValue:1,contractSize:100000,profitCurrency:'USD'},
- NZDUSD:{tickSize:0.00001,tickValue:1,contractSize:100000,profitCurrency:'USD'}
-};
+
+/* V34.5 — simplified R engine.
+   XAUUSD: price decimals (2 or 3) affect broker points only.
+   Monetary risk uses the standard XAUUSD contract behavior demonstrated by the user's MT5 examples:
+   1.00 lot = $100 per $1.00 price movement, so 0.01 lot = $1 per $1.00 movement.
+   For other symbols, Planned R:R still works; monetary R uses a saved exact specification when available. */
 function normalizeTradeSymbol(raw){return String(raw||'').trim().toUpperCase()}
-function referenceBaseSymbol(raw){const s=normalizeTradeSymbol(raw).replace(/[^A-Z0-9]/g,'');return Object.keys(tradoviaReferenceSpecs).find(k=>s===k||s.startsWith(k))||''}
 function loadConfirmedInstrumentSpecs(){try{return JSON.parse(localStorage.getItem('tradoviaInstrumentSpecs')||'{}')}catch(e){return {}}}
 function confirmedTradeSpec(raw){const key=normalizeTradeSymbol(raw),all=loadConfirmedInstrumentSpecs();return all[key]||null}
-function tradeReferenceSpec(raw){const base=referenceBaseSymbol(raw);return base?{...tradoviaReferenceSpecs[base],baseSymbol:base}:null}
-function calcPlannedRR(entry,sl,tp){const risk=Math.abs(entry-sl),reward=Math.abs(tp-entry);return Number.isFinite(risk)&&risk>0&&Number.isFinite(reward)?reward/risk:null}
-function calcTradeRiskMoneyFromSpec(spec,entry,sl,lot){
+function isXAUUSD(raw){
+ const s=normalizeTradeSymbol(raw).replace(/[^A-Z0-9]/g,'');
+ return s==='XAUUSD' || s.startsWith('XAUUSD');
+}
+function calcPlannedRR(entry,sl,tp){
+ const risk=Math.abs(entry-sl),reward=Math.abs(tp-entry);
+ return Number.isFinite(risk)&&risk>0&&Number.isFinite(reward)?reward/risk:null;
+}
+function priceDecimalsFromRaw(raw){
+ const s=String(raw??'').trim();
+ if(!s||!s.includes('.'))return null;
+ return (s.split('.')[1]||'').replace(/[^0-9].*$/,'').length;
+}
+function detectedBrokerDigits(){
+ const vals=['trade_entry','trade_sl','trade_tp'].map(id=>document.getElementById(id)?.value||'').filter(Boolean);
+ const ds=vals.map(priceDecimalsFromRaw).filter(x=>x!=null);
+ if(!ds.length)return null;
+ return Math.max(...ds)>=3?3:2;
+}
+function brokerPointSizeFromDigits(d){return d===3?0.001:d===2?0.01:null}
+function calcXAUUSDRisk(entry,sl,lot){
+ if(!Number.isFinite(entry)||!Number.isFinite(sl)||!Number.isFinite(lot)||lot<=0)return null;
+ const distance=Math.abs(entry-sl);
+ const dollarsPerOneDollarMove=100*lot;
+ const risk=distance*dollarsPerOneDollarMove;
+ return Number.isFinite(risk)&&risk>0?risk:null;
+}
+function calcRiskFromSavedSpec(spec,entry,sl,lot){
  if(!spec||!Number.isFinite(entry)||!Number.isFinite(sl)||!Number.isFinite(lot)||lot<=0)return null;
  const tickSize=Number(spec.tickSize),tickValue=Number(spec.tickValue);
  if(!Number.isFinite(tickSize)||tickSize<=0||!Number.isFinite(tickValue)||tickValue<=0)return null;
- const value=(Math.abs(entry-sl)/tickSize)*tickValue*lot;
- return Number.isFinite(value)&&value>0?value:null;
-}
-function tradeSpecStatus(raw){
- const symbol=normalizeTradeSymbol(raw),spec=confirmedTradeSpec(symbol),reference=tradeReferenceSpec(symbol);
- return spec?{state:'confirmed',symbol,spec,reference}:reference?{state:'reference',symbol,spec:null,reference}:{state:'missing',symbol,spec:null,reference:null};
+ const risk=(Math.abs(entry-sl)/tickSize)*tickValue*lot;
+ return Number.isFinite(risk)&&risk>0?risk:null;
 }
 function handleTradeSymbolChange(){renderTradeSpecState();updateTradeRPreview()}
-function renderTradeSpecState(){
- const q=id=>document.getElementById(id),status=tradeSpecStatus(q('trade_symbol')?.value||''),badge=q('tradeSpecBadge'),summary=q('tradeSpecSummary'),editor=q('tradeSpecEditor');
- if(!badge||!summary)return;
- if(status.state==='confirmed'){
-  const s=status.spec;badge.className='risk343-badge confirmed';badge.textContent=lang==='th'?'ยืนยันแล้ว':'CONFIRMED';
-  summary.innerHTML=`<div class="risk343-spec-grid"><div><span>Symbol</span><b>${esc(status.symbol||'—')}</b></div><div><span>${lang==='th'?'แหล่งข้อมูล':'Source'}</span><b>${s.source==='broker'?'Broker Verified':'Custom Confirmed'}</b></div><div><span>Tick Size</span><b>${Number(s.tickSize)}</b></div><div><span>Tick Value / 1 Lot</span><b>$${Number(s.tickValue)}</b></div></div><div class="flex flex-wrap gap-2 mt-3"><button type="button" class="btn" onclick="openTradeSpecEditor()">${lang==='th'?'แก้ไขสเปก':'Edit spec'}</button><button type="button" class="btn" onclick="removeConfirmedTradeSpec()">${lang==='th'?'ล้างสเปก':'Remove'}</button></div>`;
-  if(editor)editor.classList.add('hidden');
- }else if(status.state==='reference'){
-  const r=status.reference;badge.className='risk343-badge reference';badge.textContent=lang==='th'?'PRESET อ้างอิง':'REFERENCE';
-  summary.innerHTML=`<div class="risk343-warning"><b>${lang==='th'?'มี Tradovia Reference Preset':'Tradovia reference preset available'}</b><p>${lang==='th'?'Preset นี้ยังไม่ถือว่าเป็นสเปกของโบรกเกอร์คุณ และจะไม่ถูกใช้คำนวณความเสี่ยงจนกว่าคุณจะตรวจสอบและยืนยัน':'This preset is not your broker specification and will not be used for monetary risk until you verify and confirm it.'}</p></div><div class="risk343-spec-grid mt-3"><div><span>Base Symbol</span><b>${r.baseSymbol}</b></div><div><span>Tick Size</span><b>${r.tickSize}</b></div><div><span>Tick Value / 1 Lot</span><b>$${r.tickValue}</b></div><div><span>Contract Size</span><b>${r.contractSize}</b></div></div><button type="button" class="btn mt-3" onclick="openTradeSpecEditor()">${lang==='th'?'ตรวจสอบและยืนยัน':'Verify & confirm'}</button>`;
- }else{
-  badge.className='risk343-badge pending';badge.textContent=lang==='th'?'ต้องตั้งค่าสเปก':'REQUIRED';
-  summary.innerHTML=`<div class="risk343-warning neutral"><b>${lang==='th'?'ยังไม่มี Specification สำหรับ Symbol นี้':'No confirmed specification for this symbol'}</b><p>${lang==='th'?'Planned R:R ยังคิดได้จากราคา แต่ Initial Risk และ Realized R จะเว้นไว้จนกว่าจะมีสเปกที่ยืนยันแล้ว':'Planned R:R can still be calculated from prices, but Initial Risk and Realized R remain unavailable until a specification is confirmed.'}</p></div><button type="button" class="btn mt-3" onclick="openTradeSpecEditor()">${lang==='th'?'เพิ่ม Specification':'Add specification'}</button>`;
- }
-}
-function openTradeSpecEditor(){
- const q=id=>document.getElementById(id),status=tradeSpecStatus(q('trade_symbol')?.value||''),editor=q('tradeSpecEditor');if(!editor)return;
- const s=status.spec||status.reference||{};
- q('trade_spec_tickSize').value=s.tickSize??'';q('trade_spec_tickValue').value=s.tickValue??'';q('trade_spec_contractSize').value=s.contractSize??'';q('trade_spec_profitCurrency').value=s.profitCurrency||'USD';
- editor.classList.remove('hidden');setTimeout(()=>editor.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
-}
-function closeTradeSpecEditor(){document.getElementById('tradeSpecEditor')?.classList.add('hidden')}
-function saveConfirmedTradeSpec(){
- const q=id=>document.getElementById(id),symbol=normalizeTradeSymbol(q('trade_symbol')?.value),tickSize=Number(q('trade_spec_tickSize')?.value),tickValue=Number(q('trade_spec_tickValue')?.value),contractSize=Number(q('trade_spec_contractSize')?.value),profitCurrency=(q('trade_spec_profitCurrency')?.value||'USD').trim().toUpperCase();
- if(!symbol)return alert(lang==='th'?'กรุณาระบุ Symbol ก่อน':'Enter a symbol first.');
- if(!Number.isFinite(tickSize)||tickSize<=0||!Number.isFinite(tickValue)||tickValue<=0)return alert(lang==='th'?'Tick Size และ Tick Value ต้องมากกว่า 0':'Tick Size and Tick Value must be greater than 0.');
- const all=loadConfirmedInstrumentSpecs();all[symbol]={tickSize,tickValue,contractSize:Number.isFinite(contractSize)&&contractSize>0?contractSize:null,profitCurrency:profitCurrency||'USD',source:'custom',confirmedAt:new Date().toISOString()};localStorage.setItem('tradoviaInstrumentSpecs',JSON.stringify(all));
- closeTradeSpecEditor();renderTradeSpecState();updateTradeRPreview();
-}
-function removeConfirmedTradeSpec(){
- const symbol=normalizeTradeSymbol(document.getElementById('trade_symbol')?.value),all=loadConfirmedInstrumentSpecs();if(all[symbol]){delete all[symbol];localStorage.setItem('tradoviaInstrumentSpecs',JSON.stringify(all))}renderTradeSpecState();updateTradeRPreview();
-}
+function renderTradeSpecState(){updateTradeRPreview()}
 function updateTradeRPreview(){
  const q=id=>document.getElementById(id);if(!q('trade_entry'))return;
- const entry=Number(q('trade_entry')?.value),sl=Number(q('trade_sl')?.value),tp=Number(q('trade_tp')?.value),lot=Number(q('trade_lot')?.value),pnl=Number(q('trade_pnl')?.value),status=tradeSpecStatus(q('trade_symbol')?.value||''),rr=calcPlannedRR(entry,sl,tp);
- const risk=status.state==='confirmed'?calcTradeRiskMoneyFromSpec(status.spec,entry,sl,lot):null,realized=Number.isFinite(pnl)&&Number.isFinite(risk)&&risk>0?pnl/risk:null;
- if(q('trade_initialRisk'))q('trade_initialRisk').value=risk==null?'':risk.toFixed(2);if(q('trade_r'))q('trade_r').value=realized==null?'':realized.toFixed(2);
- if(q('tradePlannedRR'))q('tradePlannedRR').textContent=rr==null?'—':`1 : ${rr.toFixed(2)}`;if(q('tradeRiskMoney'))q('tradeRiskMoney').textContent=risk==null?'—':`$${risk.toFixed(2)}`;
- if(q('tradeRiskSource'))q('tradeRiskSource').textContent=status.state==='confirmed'?(lang==='th'?'คำนวณจากสเปกที่ยืนยันแล้ว':'Confirmed instrument spec'):status.state==='reference'?(lang==='th'?'Preset ยังไม่ได้ยืนยัน':'Preset not confirmed'):(lang==='th'?'ยังไม่มีสเปกที่ยืนยัน':'No confirmed spec');
- if(q('tradeRealizedR')){q('tradeRealizedR').textContent=realized==null?'—':`${realized>=0?'+':''}${realized.toFixed(2)}R`;q('tradeRealizedR').className=`r-value ${realized<0?'red':realized>0?'green':''}`}
- const note=q('tradeRiskIntegrityNote');if(note){note.className=`r-help ${status.state==='confirmed'?'risk343-ok':'risk343-caution'}`;note.textContent=status.state==='confirmed'?(lang==='th'?'คำนวณอัตโนมัติจาก Initial SL × Position Size × Instrument Specification ที่ยืนยันแล้ว และ Realized Net P&L ÷ Initial Risk':'Automatically calculated from Initial SL × Position Size × confirmed Instrument Specification, then Realized Net P&L ÷ Initial Risk.'):(lang==='th'?'เพื่อความถูกต้อง Tradovia จะไม่คำนวณ Initial Risk หรือ Realized R จนกว่าจะยืนยัน Instrument Specification ของ Symbol นี้':'For data integrity, Tradovia will not calculate Initial Risk or Realized R until this symbol has a confirmed Instrument Specification.')}
+ const entry=Number(q('trade_entry')?.value),sl=Number(q('trade_sl')?.value),tp=Number(q('trade_tp')?.value),
+       lot=Number(q('trade_lot')?.value),pnl=Number(q('trade_pnl')?.value),symbol=q('trade_symbol')?.value||'';
+ const rr=calcPlannedRR(entry,sl,tp),saved=confirmedTradeSpec(symbol);
+ const risk=isXAUUSD(symbol)?calcXAUUSDRisk(entry,sl,lot):calcRiskFromSavedSpec(saved,entry,sl,lot);
+ const realized=Number.isFinite(pnl)&&Number.isFinite(risk)&&risk>0?pnl/risk:null;
+
+ if(q('trade_initialRisk'))q('trade_initialRisk').value=risk==null?'':risk.toFixed(2);
+ if(q('trade_r'))q('trade_r').value=realized==null?'':realized.toFixed(2);
+ if(q('tradePlannedRR'))q('tradePlannedRR').textContent=rr==null?'—':`1 : ${rr.toFixed(2)}`;
+ if(q('tradeRiskMoney'))q('tradeRiskMoney').textContent=risk==null?'—':`$${risk.toFixed(2)}`;
+ if(q('tradeRiskSource'))q('tradeRiskSource').textContent=risk==null
+   ?(lang==='th'?'ยังคำนวณเป็น $ ไม่ได้สำหรับสินทรัพย์นี้':'Dollar risk is not available for this asset yet')
+   :(lang==='th'?'ถ้าโดน Initial SL จะเสียประมาณเท่านี้':'Approx. loss if Initial SL is hit');
+ if(q('tradeRealizedR')){
+   q('tradeRealizedR').textContent=realized==null?'—':`${realized>=0?'+':''}${realized.toFixed(2)}R`;
+   q('tradeRealizedR').className=`r-value ${realized<0?'red':realized>0?'green':''}`;
+ }
+ const note=q('tradeRiskIntegrityNote');
+ if(note){
+   note.className=`risk346-note ${risk!=null?'ok':'caution'}`;
+   note.textContent=isXAUUSD(symbol)
+    ?(lang==='th'
+      ?'XAUUSD คำนวณอัตโนมัติแล้ว — คุณไม่ต้องกรอก Points, Tick Size, Tick Value หรือ Contract Size'
+      :'XAUUSD is calculated automatically — no Points, Tick Size, Tick Value or Contract Size input is required.')
+    :(risk!=null
+      ?(lang==='th'?'Tradovia คำนวณ R ให้อัตโนมัติจากข้อมูลของสินทรัพย์ที่บันทึกไว้':'Tradovia calculates R automatically from the saved instrument data.')
+      :(lang==='th'?'R:R ตามแผนยังคำนวณได้อัตโนมัติ แต่ Initial Risk เป็น $ ยังไม่รองรับสินทรัพย์นี้ใน Prototype':'Planned R:R is still automatic, but dollar Initial Risk is not yet supported for this asset in the prototype.'));
+ }
 }
 
 function handleTradeImages(files){[...files].forEach(file=>{if(!file.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{pendingImages.push(e.target.result);renderTradeImagePreview()};r.readAsDataURL(file)});}
@@ -2326,10 +2394,10 @@ if(data.setup==='Other'){
   const custom=document.getElementById('trade_setup_custom')?.value.trim()||'';
   if(custom)data.setup=custom;
 }
-data.date=tradeDateFromISO(data.date);data.pnl=Number(data.pnl)||0;data.initialRisk=Number(data.initialRisk)||0;data.r=Number(data.r)||0;data.plannedR=calcPlannedRR(Number(data.entry),Number(data.sl),Number(data.tp))||0;const riskSpec=confirmedTradeSpec(data.symbol);data.riskSpecStatus=riskSpec?'confirmed':'unconfirmed';data.riskSpec=riskSpec?{tickSize:riskSpec.tickSize,tickValue:riskSpec.tickValue,contractSize:riskSpec.contractSize,profitCurrency:riskSpec.profitCurrency,source:riskSpec.source}:null;try{const recent=JSON.parse(localStorage.getItem('tradoviaRecentSymbols')||'[]');const next=[data.symbol,...recent.filter(s=>s!==data.symbol)].slice(0,12);localStorage.setItem('tradoviaRecentSymbols',JSON.stringify(next))}catch(e){}data.images=[...pendingImages];data.confluence=document.getElementById('trade_confluence')?.value.trim()||'';data.notes=document.getElementById('trade_notes')?.value.trim()||'';if(!data.symbol||!data.date||!data.time||!data.entry)return alert(lang==='th'?'กรุณากรอกข้อมูลหลักของรายการเทรดให้ครบ':'Please complete the required trade fields.');
+data.date=tradeDateFromISO(data.date);data.pnl=Number(data.pnl)||0;data.initialRisk=Number(data.initialRisk)||0;data.r=Number(data.r)||0;data.plannedR=calcPlannedRR(Number(data.entry),Number(data.sl),Number(data.tp))||0;const riskSpec=confirmedTradeSpec(data.symbol);data.riskSpecStatus=isXAUUSD(data.symbol)?'xauusd-auto':(riskSpec?'confirmed':'unconfirmed');data.riskSpec=isXAUUSD(data.symbol)?{source:'xauusd-auto',contractSize:100}:riskSpec?{tickSize:riskSpec.tickSize,tickValue:riskSpec.tickValue,contractSize:riskSpec.contractSize,profitCurrency:riskSpec.profitCurrency,source:riskSpec.source}:null;try{const recent=JSON.parse(localStorage.getItem('tradoviaRecentSymbols')||'[]');const next=[data.symbol,...recent.filter(s=>s!==data.symbol)].slice(0,12);localStorage.setItem('tradoviaRecentSymbols',JSON.stringify(next))}catch(e){}data.images=[...pendingImages];data.confluence=document.getElementById('trade_confluence')?.value.trim()||'';data.notes=document.getElementById('trade_notes')?.value.trim()||'';if(!data.symbol||!data.date||!data.time||!data.entry)return alert(lang==='th'?'กรุณากรอกข้อมูลหลักของรายการเทรดให้ครบ':'Please complete the required trade fields.');
 if(document.getElementById('trade_strategy')?.value==='Other' && !document.getElementById('trade_strategy_custom')?.value.trim())return alert(lang==='th'?'กรุณาระบุแนวทางหรือเทคนิคอื่นที่ใช้':'Please enter your custom strategy or technique.');
 if(document.getElementById('trade_setup')?.value==='Other' && !document.getElementById('trade_setup_custom')?.value.trim())return alert(lang==='th'?'กรุณาระบุ Setup อื่นที่ใช้':'Please enter your custom setup.');if(editId){const i=trades.findIndex(x=>x.id===editId);if(i>=0)trades[i]={...trades[i],...data};}else{const maxId=Math.max(0,...trades.map(x=>Number(String(x.id).replace(/\D/g,''))||0));trades.unshift({id:`#${maxId+1}`,...data,review:false});}try{localStorage.setItem('tradoviaTrades',JSON.stringify(trades));}catch(e){}document.getElementById('tradeModal')?.remove();showPage(current);}
-function openTradeDetail(id){const t=trades.find(x=>x.id===id);if(!t)return;const d=document.createElement('div');d.id='detailModal';d.className='fixed inset-0 z-[90] bg-black/75 backdrop-blur-md p-3 md:p-6 flex items-end md:items-center justify-center';const imgs=t.images||[];d.innerHTML=`<div class="glass rounded-t-3xl md:rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 md:p-7"><div class="flex justify-between gap-3"><div><div class="smallcap">TRADE DETAIL ${t.id}</div><div class="text-3xl font-black mt-1">${esc(t.symbol)} <span class="${t.side==='LONG'?'green':'red'}">${esc(t.side)}</span></div><div class="text-sm muted mt-1">${esc(t.date)} · ${esc(t.time)} → ${esc(t.exit)} · ${esc(t.session)}</div></div><div class="flex gap-2"><button class="btn" onclick="document.getElementById('detailModal')?.remove();openTrade('${t.id}')"><i data-lucide="pencil" class="w-4 h-4 inline"></i> Edit</button><button class="btn !border-rose-400/20 !text-rose-300" onclick="deleteTrade('${t.id}')"><i data-lucide="trash-2" class="w-4 h-4 inline"></i> Delete</button><button class="btn" onclick="this.closest('#detailModal').remove()">✕</button></div></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">${[['P&L',`<span class='${t.pnl>=0?'green':'red'}'>${t.pnl>=0?'+':''}$${Number(t.pnl).toFixed(2)}</span>`],['Realized R',`<span class='${t.r>=0?'green':'red'}'>${t.r>=0?'+':''}${Number(t.r||0).toFixed(2)}R</span>`],['Planned R:R',`1 : ${Number(t.plannedR||calcPlannedRR(Number(t.entry),Number(t.sl),Number(t.tp))||0).toFixed(2)}`],['Initial Risk',t.initialRisk?`$${Number(t.initialRisk).toFixed(2)}<div class="risk343-detail-source">${t.riskSpecStatus==='confirmed'?'Confirmed spec':'Legacy / unverified'}</div>`:'—'],['Entry',t.entry],['SL',t.sl],['TP',t.tp],['Lot',t.lot]].map(x=>`<div class="subtle rounded-2xl p-4"><div class="text-xs muted">${x[0]}</div><div class="font-black text-lg mt-1 mono">${x[1]}</div></div>`).join('')}</div><div class="grid lg:grid-cols-2 gap-4 mt-4"><div class="glass rounded-2xl p-5"><div class="smallcap">MARKET CONTEXT</div><div class="space-y-2 mt-4">${[['Timeframe',t.timeframe||'5m'],['Session',t.session],['Setup',t.setup],['Bias',t.bias||'Bullish'],['Confluence',t.confluence||'—']].map(x=>`<div class="flex justify-between gap-3 subtle rounded-xl p-3 text-sm"><span class="muted">${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div></div><div class="glass rounded-2xl p-5"><div class="smallcap">NEWS & PSYCHOLOGY</div><div class="space-y-2 mt-4"><div class="subtle rounded-xl p-3"><div class="text-xs muted">News</div><div class="font-bold mt-1">${esc(t.news||'None')}</div></div><div class="subtle rounded-xl p-3"><div class="text-xs muted">Emotion</div><div class="font-bold mt-1">${esc(t.emotion||'—')}</div></div><div class="subtle rounded-xl p-3"><div class="text-xs muted">Rule Compliance</div><div class="green font-black mt-1">FOLLOWED</div></div></div></div></div>${imgs.length?`<div class="glass rounded-2xl p-5 mt-4"><div class="smallcap">TRADE SCREENSHOTS</div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">${imgs.map((src,i)=>`<img src="${src}" class="w-full h-44 object-cover rounded-xl border border-white/10" alt="Trade screenshot ${i+1}">`).join('')}</div></div>`:''}<div class="glass rounded-2xl p-5 mt-4"><div class="smallcap">REVIEW</div><div class="text-sm text-slate-300 leading-7 mt-3">${esc(t.notes||'What went right: confirmation was clear and risk stayed within plan. What to repeat: wait for structure confirmation. What to improve: document the chart context before entering.')}</div></div></div>`;document.body.appendChild(d);lucide.createIcons()}
+function openTradeDetail(id){const t=trades.find(x=>x.id===id);if(!t)return;const d=document.createElement('div');d.id='detailModal';d.className='fixed inset-0 z-[90] bg-black/75 backdrop-blur-md p-3 md:p-6 flex items-end md:items-center justify-center';const imgs=t.images||[];d.innerHTML=`<div class="glass rounded-t-3xl md:rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 md:p-7"><div class="flex justify-between gap-3"><div><div class="smallcap">TRADE DETAIL ${t.id}</div><div class="text-3xl font-black mt-1">${esc(t.symbol)} <span class="${t.side==='LONG'?'green':'red'}">${esc(t.side)}</span></div><div class="text-sm muted mt-1">${esc(t.date)} · ${esc(t.time)} → ${esc(t.exit)} · ${esc(t.session)}</div></div><div class="flex gap-2"><button class="btn" onclick="document.getElementById('detailModal')?.remove();openTrade('${t.id}')"><i data-lucide="pencil" class="w-4 h-4 inline"></i> Edit</button><button class="btn !border-rose-400/20 !text-rose-300" onclick="deleteTrade('${t.id}')"><i data-lucide="trash-2" class="w-4 h-4 inline"></i> Delete</button><button class="btn" onclick="this.closest('#detailModal').remove()">✕</button></div></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">${[['P&L',`<span class='${t.pnl>=0?'green':'red'}'>${t.pnl>=0?'+':''}$${Number(t.pnl).toFixed(2)}</span>`],['Realized R',`<span class='${t.r>=0?'green':'red'}'>${t.r>=0?'+':''}${Number(t.r||0).toFixed(2)}R</span>`],['Planned R:R',`1 : ${Number(t.plannedR||calcPlannedRR(Number(t.entry),Number(t.sl),Number(t.tp))||0).toFixed(2)}`],['Initial Risk',t.initialRisk?`$${Number(t.initialRisk).toFixed(2)}<div class="risk343-detail-source">${t.riskSpecStatus==='xauusd-auto'?'XAUUSD auto':t.riskSpecStatus==='confirmed'?'Confirmed spec':'Legacy / unverified'}</div>`:'—'],['Entry',t.entry],['SL',t.sl],['TP',t.tp],['Lot',t.lot]].map(x=>`<div class="subtle rounded-2xl p-4"><div class="text-xs muted">${x[0]}</div><div class="font-black text-lg mt-1 mono">${x[1]}</div></div>`).join('')}</div><div class="grid lg:grid-cols-2 gap-4 mt-4"><div class="glass rounded-2xl p-5"><div class="smallcap">MARKET CONTEXT</div><div class="space-y-2 mt-4">${[['Timeframe',t.timeframe||'5m'],['Session',t.session],['Setup',t.setup],['Bias',t.bias||'Bullish'],['Confluence',t.confluence||'—']].map(x=>`<div class="flex justify-between gap-3 subtle rounded-xl p-3 text-sm"><span class="muted">${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div></div><div class="glass rounded-2xl p-5"><div class="smallcap">NEWS & PSYCHOLOGY</div><div class="space-y-2 mt-4"><div class="subtle rounded-xl p-3"><div class="text-xs muted">News</div><div class="font-bold mt-1">${esc(t.news||'None')}</div></div><div class="subtle rounded-xl p-3"><div class="text-xs muted">Emotion</div><div class="font-bold mt-1">${esc(t.emotion||'—')}</div></div><div class="subtle rounded-xl p-3"><div class="text-xs muted">Rule Compliance</div><div class="green font-black mt-1">FOLLOWED</div></div></div></div></div>${imgs.length?`<div class="glass rounded-2xl p-5 mt-4"><div class="smallcap">TRADE SCREENSHOTS</div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">${imgs.map((src,i)=>`<img src="${src}" class="w-full h-44 object-cover rounded-xl border border-white/10" alt="Trade screenshot ${i+1}">`).join('')}</div></div>`:''}<div class="glass rounded-2xl p-5 mt-4"><div class="smallcap">REVIEW</div><div class="text-sm text-slate-300 leading-7 mt-3">${esc(t.notes||'What went right: confirmation was clear and risk stayed within plan. What to repeat: wait for structure confirmation. What to improve: document the chart context before entering.')}</div></div></div>`;document.body.appendChild(d);lucide.createIcons()}
 function deleteTrade(id){const t=trades.find(x=>x.id===id);if(!t)return;if(!confirm(`Delete ${t.id} — ${t.symbol}? This action cannot be undone.`))return;trades=trades.filter(x=>x.id!==id);try{localStorage.setItem('tradoviaTrades',JSON.stringify(trades));}catch(e){}document.getElementById('detailModal')?.remove();showPage(current);}
 
 let tradoviaTheme = localStorage.getItem('tradoviaTheme') || 'dark';

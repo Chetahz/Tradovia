@@ -1,42 +1,4 @@
-import Link from "next/link";
-import { workspaceNavigation } from "@/lib/navigation";
-import { Button } from "@/components/ui/button";
-
-export function WorkspaceShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="workspace-shell">
-      <aside className="workspace-sidebar" aria-label="Workspace navigation">
-        <Link href="/" className="brand">TRADOVIA</Link>
-        <div className="sidebar-copy">Trading Intelligence Platform</div>
-        <nav className="workspace-nav">
-          {workspaceNavigation.map((group) => (
-            <section key={group.label} className="nav-group">
-              <p>{group.label}</p>
-              {group.items.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-            </section>
-          ))}
-        </nav>
-      </aside>
-      <div className="workspace-main">
-        <header className="workspace-header">
-          <div>
-            <span className="mobile-brand">TRADOVIA</span>
-            <span className="environment-badge">Prototype data</span>
-          </div>
-          <div className="header-actions">
-            <Button variant="ghost" aria-label="Switch language">EN / TH</Button>
-            <Button variant="primary">+ Add Trade</Button>
-          </div>
-        </header>
-        <main className="workspace-content">{children}</main>
-        <nav className="mobile-tabs" aria-label="Mobile navigation">
-          <Link href="/workspace">Today</Link>
-          <Link href="/workspace/journal">Journal</Link>
-          <button aria-label="Add trade">+</button>
-          <Link href="/workspace/calendar">Calendar</Link>
-          <Link href="/workspace/analytics">Insights</Link>
-        </nav>
-      </div>
-    </div>
-  );
-}
+"use client";
+import Link from "next/link";import{workspaceNavigation}from"@/lib/navigation";import{Button}from"@/components/ui/button";import{PreferencesProvider,usePreferences}from"@/components/providers/preferences-provider";
+export function WorkspaceShell({children}:{children:React.ReactNode}){return <PreferencesProvider><Shell>{children}</Shell></PreferencesProvider>}
+function Shell({children}:{children:React.ReactNode}){const{theme,language,toggleTheme,toggleLanguage}=usePreferences();return <div className="workspace-shell"><aside className="workspace-sidebar" aria-label="Workspace navigation"><Link href="/" className="brand">TRADOVIA</Link><div className="sidebar-copy">Trading Intelligence Platform</div><nav className="workspace-nav">{workspaceNavigation.map(group=><section key={group.label} className="nav-group"><p>{group.label}</p>{group.items.map(item=><Link key={item.href} href={item.href}>{item.label}</Link>)}</section>)}</nav></aside><div className="workspace-main"><header className="workspace-header"><div><span className="mobile-brand">TRADOVIA</span><span className="environment-badge">Prototype data</span></div><div className="header-actions"><Button variant="ghost" onClick={toggleTheme} aria-label="Switch color theme">{theme==="dark"?"☀ Light":"☾ Dark"}</Button><Button variant="ghost" onClick={toggleLanguage} aria-label="Switch language">{language} / {language==="EN"?"TH":"EN"}</Button><Link className="tv-button tv-button--primary" href="/workspace/journal">+ Add Trade</Link></div></header><main className="workspace-content">{children}</main><nav className="mobile-tabs" aria-label="Mobile navigation"><Link href="/workspace">Today</Link><Link href="/workspace/journal">Journal</Link><Link className="mobile-add" aria-label="Add trade" href="/workspace/journal">+</Link><Link href="/workspace/calendar">Calendar</Link><Link href="/workspace/analytics">Insights</Link></nav></div></div>}

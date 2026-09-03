@@ -1,7 +1,9 @@
 import type { Trade, TradeDraft, TradeSide } from "./types";
 import { enrichTradeDraft } from "./calculations";
 
-const STORAGE_KEY = "tradoviaTrades";
+const LEGACY_STORAGE_KEY = "tradoviaTrades";
+const PRODUCTION_STORAGE_KEY = "tradovia.production.trades.v1";
+const MIGRATION_BACKUP_KEY = "tradovia.production.legacy-trades-backup.v1";
 
 type LegacyTrade = Record<string, unknown>;
 
@@ -15,13 +17,22 @@ export interface TradeRepository {
 export class LocalTradeRepository implements TradeRepository {
   list(): Trade[] {
     if (typeof window === "undefined") return [];
+    const production = this.read(PRODUCTION_STORAGE_KEY);
+    if (production) return normalizeTrades(production);
+
+    const legacy = this.read(LEGACY_STORAGE_KEY);
+    if (!legacy) return [];
+
+    // Phase 1 migration is intentionally copy-only. The prototype key remains untouched.
     try {
-      const value = window.localStorage.getItem(STORAGE_KEY);
-      const parsed: unknown = value ? JSON.parse(value) : [];
-      if (!Array.isArray(parsed)) return [];
-      return parsed.map((item, index) => normalizeTrade(item as LegacyTrade, index)).filter((trade): trade is Trade => Boolean(trade));
+      if (!window.localStorage.getItem(MIGRATION_BACKUP_KEY)) {
+        window.localStorage.setItem(MIGRATION_BACKUP_KEY, JSON.stringify(legacy));
+      }
+      const normalized = normalizeTrades(legacy);
+      window.localStorage.setItem(PRODUCTION_STORAGE_KEY, JSON.stringify(normalized));
+      return normalized;
     } catch {
-      return [];
+      return normalizeTrades(legacy);
     }
   }
 
@@ -43,12 +54,27 @@ export class LocalTradeRepository implements TradeRepository {
 
   remove(id: string) { this.write(this.list().filter((trade) => trade.id !== id)); }
 
-  private write(trades: Trade[]) { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); }
+  private read(key: string): LegacyTrade[] | undefined {
+    try {
+      const value = window.localStorage.getItem(key);
+      if (!value) return undefined;
+      const parsed: unknown = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed as LegacyTrade[] : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private write(trades: Trade[]) { window.localStorage.setItem(PRODUCTION_STORAGE_KEY, JSON.stringify(trades)); }
+}
+
+function normalizeTrades(items: LegacyTrade[]) {
+  return items.map((item, index) => normalizeTrade(item, index)).filter((trade): trade is Trade => Boolean(trade));
 }
 
 function normalizeTrade(raw: LegacyTrade, index: number): Trade | undefined {
   const symbol = text(raw.symbol ?? raw.asset ?? raw.pair ?? raw.instrument);
-  const openedAt = text(raw.openedAt ?? raw.dateTime ?? raw.datetime ?? raw.date ?? raw.time);
+  const openedAt = normalizeOpenedAt(raw);
   const entry = numeric(raw.entry ?? raw.entryPrice);
   const stopLoss = numeric(raw.stopLoss ?? raw.sl ?? raw.initialSL);
   if (!symbol || !openedAt || entry === undefined || stopLoss === undefined) return undefined;
@@ -56,6 +82,15 @@ function normalizeTrade(raw: LegacyTrade, index: number): Trade | undefined {
   const side: TradeSide = sideText.includes("short") || sideText.includes("sell") ? "Short" : "Long";
   const draft: TradeDraft = { symbol: symbol.toUpperCase(), side, openedAt, entry, stopLoss, takeProfit: numeric(raw.takeProfit ?? raw.tp), exit: numeric(raw.exit ?? raw.exitPrice), lotSize: numeric(raw.lotSize ?? raw.lot ?? raw.size), netPnl: numeric(raw.netPnl ?? raw.pnl ?? raw.profit), strategy: text(raw.strategy) || undefined, setup: text(raw.setup) || undefined, notes: text(raw.notes ?? raw.note) || undefined, initialRisk: numeric(raw.initialRisk ?? raw.riskAmount) };
   return { id: text(raw.id) || `legacy-${index}-${openedAt}`, ...enrichTradeDraft(draft) };
+}
+
+function normalizeOpenedAt(raw: LegacyTrade) {
+  const direct = text(raw.openedAt ?? raw.dateTime ?? raw.datetime);
+  if (direct) return direct;
+  const date = text(raw.date ?? raw.tradeDate ?? raw.openDate);
+  const time = text(raw.time ?? raw.tradeTime ?? raw.openTime);
+  if (date && time) return `${date}T${time}`;
+  return date || time;
 }
 
 function text(value: unknown) { return typeof value === "string" || typeof value === "number" ? String(value).trim() : ""; }

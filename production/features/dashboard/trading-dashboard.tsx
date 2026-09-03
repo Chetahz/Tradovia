@@ -1,0 +1,15 @@
+"use client";
+import Link from "next/link";
+import { useEffect,useMemo,useState } from "react";
+import { Card } from "@/components/ui/card";
+import { analyzeTrades } from "@/features/analytics/engine";
+import { tradeRepository } from "@/features/trades/storage";
+import type { Trade } from "@/features/trades/types";
+export function TradingDashboard(){const[trades,setTrades]=useState<Trade[]>([]);useEffect(()=>setTrades(tradeRepository.list()),[]);const s=useMemo(()=>analyzeTrades(trades),[trades]);const recent=[...trades].sort((a,b)=>new Date(b.openedAt).getTime()-new Date(a.openedAt).getTime()).slice(0,5);return <>
+<section className="metric-grid"><Metric label="Net P&L" value={money(s.netPnl)} tone={s.netPnl}/><Metric label="Win Rate" value={pct(s.winRate)}/><Metric label="Profit Factor" value={num(s.profitFactor)}/><Metric label="Avg. Realized R" value={rr(s.averageRealizedR)}/></section>
+<section className="dashboard-grid"><Card className="dashboard-panel"><div className="panel-heading"><div><p className="eyebrow">RECENT ACTIVITY</p><h2>Latest Trades</h2></div><Link href="/workspace/journal">Open Journal →</Link></div>{recent.length?<div className="recent-trades">{recent.map(t=><div key={t.id}><span><strong>{t.symbol}</strong><small>{new Date(t.openedAt).toLocaleDateString()} · {t.side}</small></span><b className={(t.netPnl??0)>=0?"positive":"negative"}>{money(t.netPnl??0)}</b></div>)}</div>:<Empty text="Add your first trade to start building the dashboard." href="/workspace/journal"/>}</Card>
+<Card className="dashboard-panel"><div className="panel-heading"><div><p className="eyebrow">TRADOVIA INTELLIGENCE</p><h2>Performance Review</h2></div><Link href="/workspace/analytics">Analytics →</Link></div>{trades.length?<div className="insight-stack"><div><span>Strongest Edge</span><strong>{s.bestStrategy?`${s.bestStrategy.name} · ${money(s.bestStrategy.netPnl)}`:"Add strategy labels to reveal patterns"}</strong></div><div><span>Biggest Leak</span><strong>{s.worstStrategy&&s.worstStrategy.netPnl<0?`${s.worstStrategy.name} · ${money(s.worstStrategy.netPnl)}`:"No negative strategy pattern identified yet"}</strong></div><div><span>Review Next</span><strong>Inspect the underlying trades before changing your process.</strong></div></div>:<Empty text="Intelligence appears after your journal contains trade history." href="/workspace/journal"/>}</Card></section>
+</>}
+function Metric({label,value,tone}:{label:string;value:string;tone?:number}){return <Card className="metric-card"><span>{label}</span><strong className={tone===undefined?"":tone>=0?"positive":"negative"}>{value}</strong><small>From your recorded trades</small></Card>}
+function Empty({text,href}:{text:string;href:string}){return <div className="dashboard-empty"><p>{text}</p><Link className="tv-button" href={href}>Open Journal</Link></div>}
+function money(v:number){return `${v<0?"-":""}$${Math.abs(v).toFixed(2)}`}function pct(v?:number){return v===undefined?"—":`${v.toFixed(1)}%`}function num(v?:number){return v===undefined?"—":v.toFixed(2)}function rr(v?:number){return v===undefined?"—":`${v.toFixed(2)}R`}

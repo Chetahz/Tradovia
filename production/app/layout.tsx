@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./parity.css";
 
 export const metadata: Metadata = {
   title: "Tradovia — Trading Intelligence Platform",

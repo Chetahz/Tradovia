@@ -1,5 +1,11 @@
 export type TradeSide = "Long" | "Short";
 
+export type TradeImage = {
+  id: string;
+  name: string;
+  dataUrl: string;
+};
+
 export type Trade = {
   id: string;
   symbol: string;
@@ -14,6 +20,7 @@ export type Trade = {
   strategy?: string;
   setup?: string;
   notes?: string;
+  images?: TradeImage[];
   initialRisk?: number;
   plannedRR?: number;
   realizedR?: number;

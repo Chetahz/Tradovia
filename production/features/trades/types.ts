@@ -1,4 +1,5 @@
 export type TradeSide = "Long" | "Short";
+export type TradeSource = "manual" | "imported" | "mt5" | "demo";
 
 export type TradeImage = {
   id: string;
@@ -8,6 +9,7 @@ export type TradeImage = {
 
 export type Trade = {
   id: string;
+  source?: TradeSource;
   symbol: string;
   side: TradeSide;
   openedAt: string;
@@ -26,4 +28,4 @@ export type Trade = {
   realizedR?: number;
 };
 
-export type TradeDraft = Omit<Trade, "id" | "plannedRR" | "realizedR">;
+export type TradeDraft = Omit<Trade, "id" | "source" | "plannedRR" | "realizedR">;

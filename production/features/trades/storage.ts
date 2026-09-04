@@ -1,5 +1,7 @@
 import type { Trade, TradeDraft, TradeImage, TradeSide } from "./types";
 import { enrichTradeDraft } from "./calculations";
+import { demoTrades } from "./demo-data";
+import { getDataMode, setDataMode } from "@/lib/data-mode";
 
 const LEGACY_STORAGE_KEY = "tradoviaTrades";
 const PRODUCTION_STORAGE_KEY = "tradovia.production.trades.v1";
@@ -16,6 +18,7 @@ export interface TradeRepository {
 export class LocalTradeRepository implements TradeRepository {
   list(): Trade[] {
     if (typeof window === "undefined") return [];
+    if (getDataMode() === "demo") return demoTrades;
     const production = this.read(PRODUCTION_STORAGE_KEY);
     if (production) return normalizeTrades(production);
 
@@ -35,22 +38,25 @@ export class LocalTradeRepository implements TradeRepository {
   }
 
   create(draft: TradeDraft) {
-    const trade: Trade = { id: crypto.randomUUID(), ...enrichTradeDraft(draft) };
+    setDataMode("manual");
+    const trade: Trade = { id: crypto.randomUUID(), source: "manual", ...enrichTradeDraft(draft) };
     this.write([trade, ...this.list()]);
     return trade;
   }
 
   update(id: string, draft: TradeDraft) {
+    if (id.startsWith("demo-")) return undefined;
     const trades = this.list();
     const index = trades.findIndex((trade) => trade.id === id);
     if (index < 0) return undefined;
-    const updated: Trade = { id, ...enrichTradeDraft(draft) };
+    const updated: Trade = { id, source: trades[index].source ?? "manual", ...enrichTradeDraft(draft) };
     trades[index] = updated;
     this.write(trades);
     return updated;
   }
 
   remove(id: string) {
+    if (id.startsWith("demo-")) return;
     this.write(this.list().filter((trade) => trade.id !== id));
   }
 
@@ -99,7 +105,8 @@ function normalizeTrade(raw: LegacyTrade, index: number): Trade | undefined {
     images: normalizeImages(raw.images ?? raw.screenshots ?? raw.attachments),
     initialRisk: numeric(raw.initialRisk ?? raw.riskAmount),
   };
-  return { id: text(raw.id) || `legacy-${index}-${openedAt}`, ...enrichTradeDraft(draft) };
+  const source = raw.source === "imported" || raw.source === "mt5" ? raw.source : "manual";
+  return { id: text(raw.id) || `legacy-${index}-${openedAt}`, source, ...enrichTradeDraft(draft) };
 }
 
 function normalizeImages(value: unknown): TradeImage[] | undefined {

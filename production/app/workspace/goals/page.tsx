@@ -1,0 +1,1 @@
+import{GoalsRules}from"@/features/goals/goals-rules";export default function GoalsPage(){return <><div className="page-heading"><div><p className="eyebrow">TRADING</p><h1>Goals & Rules</h1></div><p>Keep process goals and trading rules visible, editable and separate from performance outcomes.</p></div><GoalsRules/></>}

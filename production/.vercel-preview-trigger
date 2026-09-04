@@ -1,0 +1,2 @@
+Tradovia Phase 1 production-foundation preview trigger.
+This file intentionally changes the production root so Vercel Git integration creates a Preview deployment for this branch.

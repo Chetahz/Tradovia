@@ -1,0 +1,13 @@
+import type { Trade } from "./types";
+
+// Product demonstration records only. They never enter user storage or broker/import pipelines.
+export const demoTrades: Trade[] = [
+  { id:"demo-01", source:"demo", symbol:"XAUUSD", side:"Long", openedAt:"2026-09-01T14:35:00", entry:3472.40, stopLoss:3466.40, takeProfit:3484.40, exit:3483.20, lotSize:0.20, netPnl:216, initialRisk:120, plannedRR:2, realizedR:1.8, strategy:"ICT", setup:"Liquidity Sweep + MSS", notes:"Sample record demonstrating a planned London-session execution." },
+  { id:"demo-02", source:"demo", symbol:"XAUUSD", side:"Short", openedAt:"2026-09-02T19:42:00", entry:3491.10, stopLoss:3496.10, takeProfit:3481.10, exit:3495.60, lotSize:0.20, netPnl:-90, initialRisk:100, plannedRR:2, realizedR:-0.9, strategy:"SMC", setup:"FVG Retest", notes:"Sample loss retained to show realistic analytics and review states." },
+  { id:"demo-03", source:"demo", symbol:"NAS100", side:"Long", openedAt:"2026-09-03T20:15:00", entry:23540, stopLoss:23490, takeProfit:23640, exit:23625, lotSize:0.10, netPnl:170, initialRisk:100, plannedRR:2, realizedR:1.7, strategy:"Price Action", setup:"Breakout Retest" },
+  { id:"demo-04", source:"demo", symbol:"EURUSD", side:"Short", openedAt:"2026-09-04T15:05:00", entry:1.1642, stopLoss:1.1662, takeProfit:1.1602, exit:1.1614, lotSize:0.50, netPnl:140, initialRisk:100, plannedRR:2, realizedR:1.4, strategy:"ICT", setup:"London Judas Swing" },
+  { id:"demo-05", source:"demo", symbol:"XAUUSD", side:"Long", openedAt:"2026-09-07T13:55:00", entry:3510.80, stopLoss:3505.80, takeProfit:3520.80, exit:3506.30, lotSize:0.20, netPnl:-90, initialRisk:100, plannedRR:2, realizedR:-0.9, strategy:"SMC", setup:"Order Block", notes:"Sample off-plan outcome for behavior review." },
+  { id:"demo-06", source:"demo", symbol:"BTCUSD", side:"Long", openedAt:"2026-09-08T10:30:00", entry:112400, stopLoss:111900, takeProfit:113400, exit:113250, lotSize:0.02, netPnl:170, initialRisk:100, plannedRR:2, realizedR:1.7, strategy:"Price Action", setup:"Range Reclaim" },
+  { id:"demo-07", source:"demo", symbol:"XAUUSD", side:"Short", openedAt:"2026-09-09T20:02:00", entry:3528.20, stopLoss:3533.20, takeProfit:3518.20, exit:3519.70, lotSize:0.20, netPnl:170, initialRisk:100, plannedRR:2, realizedR:1.7, strategy:"ICT", setup:"Liquidity Sweep + MSS" },
+  { id:"demo-08", source:"demo", symbol:"GBPUSD", side:"Long", openedAt:"2026-09-10T15:25:00", entry:1.3520, stopLoss:1.3495, takeProfit:1.3570, lotSize:0.40, initialRisk:100, plannedRR:2, strategy:"SMC", setup:"FVG Retest", notes:"Sample open trade: no realized P&L is included in performance metrics." },
+];

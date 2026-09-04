@@ -1,0 +1,1 @@
+import{RiskCalculator}from"@/features/risk/risk-calculator";export default function RiskPage(){return <><div className="page-heading"><div><p className="eyebrow">TOOLS</p><h1>Risk Calculator</h1></div><p>Keep risk planning simple while avoiding unverified broker specifications.</p></div><RiskCalculator/></>}

@@ -30,7 +30,8 @@ export function TradeForm({
 }) {
   const [v, setV] = useState(trade),
     [error, setError] = useState(''),
-    [uploading, setUploading] = useState(false);
+    [uploading, setUploading] = useState(false),
+    [expanded, setExpanded] = useState(false);
   const set = (k: keyof Trade, value: unknown) => setV({ ...v, [k]: value });
   return (
     <form
@@ -42,10 +43,17 @@ export function TradeForm({
           validateTrade(v);
           await onSave(v);
         } catch (e) {
+          setExpanded(true);
           setError(e instanceof Error ? e.message : 'Invalid trade');
         }
       }}
     >
+      <p className="journal-hint">
+        {t(
+          'Start with the execution and result. Add your plan, reflection and screenshots below.',
+          'เริ่มจากข้อมูลเข้าเทรดและผลลัพธ์ แล้วเพิ่มแผน บันทึกทบทวน และภาพกราฟด้านล่าง',
+        )}
+      </p>
       <div className="form-grid">
         <label className="form-field full">
           <span>{t('Trading account', 'บัญชีเทรด')}</span>
@@ -92,8 +100,6 @@ export function TradeForm({
         {(
           [
             ['entry', 'Entry price', 'ราคาเข้า'],
-            ['sl', 'Stop loss', 'จุดตัดขาดทุน'],
-            ['tp', 'Take profit', 'จุดทำกำไร'],
             ['lot', 'Size / lot', 'ขนาด / Lot'],
             ['risk', 'Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)'],
             ['gross', 'Realized gross P&L (USD)', 'กำไรก่อนค่าธรรมเนียม (USD)'],
@@ -107,7 +113,7 @@ export function TradeForm({
             step="any"
             required
             min={k === 'gross' ? undefined : 0}
-            value={v[k]}
+            value={(k === 'entry' || k === 'lot') && v[k] === 0 ? '' : v[k]}
             onChange={(e) => set(k, Number(e.target.value))}
           />
         ))}
@@ -131,91 +137,134 @@ export function TradeForm({
           placeholder="FVG + MSS, London"
           onChange={(e) => set('setup', e.target.value)}
         />
-        <label className="form-field full">
-          <span>{t('Notes & reflection', 'บันทึกและทบทวน')}</span>
-          <textarea
-            value={v.notes}
-            maxLength={10000}
-            rows={4}
-            onChange={(e) => set('notes', e.target.value)}
-            placeholder={t(
-              'What did you see? Did you follow your plan?',
-              'เห็นอะไรในตลาด? ทำตามแผนได้หรือไม่?',
-            )}
-          />
-        </label>
       </div>
-      <div className="upload-section">
-        <label className="button ghost compact">
-          <ImagePlus size={17} />
-          {uploading
-            ? t('Uploading…', 'กำลังอัปโหลด…')
-            : t('Add trade image', 'เพิ่มภาพกราฟ')}
-          <input
-            aria-label="Upload trade image"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="sr-only"
-            disabled={uploading || v.imageIds.length >= 5}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploading(true);
-              setError('');
-              try {
-                const fd = new FormData();
-                fd.set('image', file);
-                const r = await fetch(`/api/images?mode=${mode}`, {
-                  method: 'POST',
-                  body: fd,
-                });
-                const res = (await r.json()) as { id: string; error?: string };
-                if (!r.ok) throw new Error(res.error);
-                setV((current) => ({
-                  ...current,
-                  imageIds: [...current.imageIds, res.id],
-                }));
-              } catch (e) {
-                setError(e instanceof Error ? e.message : 'Upload failed');
-              } finally {
-                setUploading(false);
-              }
-            }}
-          />
-        </label>
-        <small>
-          {t(
-            'PNG, JPG, WebP · 5 MB each · up to 5 images',
-            'PNG, JPG, WebP · ภาพละไม่เกิน 5 MB · สูงสุด 5 ภาพ',
-          )}
-        </small>
-        <div className="trade-images">
-          {v.imageIds.map((id) => (
-            <div key={id}>
-              <Image
-                unoptimized
-                width={130}
-                height={95}
-                src={`/api/images/${id}?mode=${mode}`}
-                alt="Trade attachment"
-              />
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="Remove image"
-                onClick={() =>
-                  set(
-                    'imageIds',
-                    v.imageIds.filter((x) => x !== id),
-                  )
-                }
-              >
-                <X size={16} />
-              </button>
-            </div>
+      <details
+        className="journal-extra"
+        open={expanded}
+        onToggle={(e) => setExpanded(e.currentTarget.open)}
+      >
+        <summary>
+          {t('Plan, reflection & screenshots', 'แผน บันทึกทบทวน และภาพกราฟ')}
+          <span>{t('Optional details', 'รายละเอียดเพิ่มเติม')}</span>
+        </summary>
+        <div className="form-grid">
+          {(
+            [
+              ['sl', 'Stop loss', 'จุดตัดขาดทุน'],
+              ['tp', 'Take profit', 'จุดทำกำไร'],
+            ] as const
+          ).map(([key, en, thai]) => (
+            <Field
+              key={key}
+              label={t(en, thai)}
+              type="number"
+              min="0"
+              step="any"
+              value={v[key]}
+              onChange={(e) => set(key, Number(e.target.value))}
+            />
           ))}
+          <label className="form-field full">
+            <span>{t('Notes & reflection', 'บันทึกและทบทวน')}</span>
+            <textarea
+              value={v.notes}
+              maxLength={10000}
+              rows={4}
+              onChange={(e) => set('notes', e.target.value)}
+              placeholder={t(
+                'What did you see? Did you follow your plan?',
+                'เห็นอะไรในตลาด? ทำตามแผนได้หรือไม่?',
+              )}
+            />
+          </label>
         </div>
-      </div>
+        <button
+          className="text-button journal-prompt"
+          type="button"
+          onClick={() =>
+            set(
+              'notes',
+              `${v.notes}${v.notes ? '\n\n' : ''}${t('PLAN / ENTRY REASON:\n\nFOLLOWED MY PLAN? WHY?\n\nONE THING TO REPEAT OR IMPROVE:\n', 'แผน / เหตุผลเข้าเทรด:\n\nทำตามแผนหรือไม่ เพราะอะไร:\n\nสิ่งที่ควรทำซ้ำหรือปรับปรุง:\n')}`,
+            )
+          }
+        >
+          {t('Add reflection prompts', 'เพิ่มหัวข้อช่วยทบทวน')} +
+        </button>
+        <div className="upload-section">
+          <label className="button ghost compact">
+            <ImagePlus size={17} />
+            {uploading
+              ? t('Uploading…', 'กำลังอัปโหลด…')
+              : t('Add trade image', 'เพิ่มภาพกราฟ')}
+            <input
+              aria-label="Upload trade image"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={uploading || v.imageIds.length >= 5}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                setError('');
+                try {
+                  const fd = new FormData();
+                  fd.set('image', file);
+                  const r = await fetch(`/api/images?mode=${mode}`, {
+                    method: 'POST',
+                    body: fd,
+                  });
+                  const res = (await r.json()) as {
+                    id: string;
+                    error?: string;
+                  };
+                  if (!r.ok) throw new Error(res.error);
+                  setV((current) => ({
+                    ...current,
+                    imageIds: [...current.imageIds, res.id],
+                  }));
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : 'Upload failed');
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            />
+          </label>
+          <small>
+            {t(
+              'PNG, JPG, WebP · 5 MB each · up to 5 images',
+              'PNG, JPG, WebP · ภาพละไม่เกิน 5 MB · สูงสุด 5 ภาพ',
+            )}
+          </small>
+          <div className="trade-images">
+            {v.imageIds.map((id) => (
+              <div key={id}>
+                <Image
+                  unoptimized
+                  width={130}
+                  height={95}
+                  src={`/api/images/${id}?mode=${mode}`}
+                  alt="Trade attachment"
+                />
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label="Remove image"
+                  onClick={() =>
+                    set(
+                      'imageIds',
+                      v.imageIds.filter((x) => x !== id),
+                    )
+                  }
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </details>
       {(error || serverError) && (
         <p role="alert" className="negative">
           {error || serverError}
@@ -227,6 +276,17 @@ export function TradeForm({
           <b className={net(v) >= 0 ? 'positive' : 'negative'}>
             {v.status === 'CLOSED' ? money(net(v)) : '—'}
           </b>
+        </span>
+        <span>
+          {t('Realized R', 'R ที่เกิดขึ้นจริง')}:{' '}
+          <b>
+            {v.status === 'CLOSED' && v.risk > 0
+              ? `${(net(v) / v.risk).toFixed(2)}R`
+              : '—'}
+          </b>
+          <small className="journal-hint">
+            {t('Net P&L ÷ planned risk', 'กำไรสุทธิ ÷ ความเสี่ยงตามแผน')}
+          </small>
         </span>
         <button className="button ink" disabled={busy || uploading}>
           {busy ? t('Saving…', 'กำลังบันทึก…') : t('Save trade', 'บันทึกการเทรด')}

@@ -103,6 +103,11 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
     [status, setStatus] = useState('all'),
     [edit, setEdit] = useState<Trade | null>(null),
     [detail, setDetail] = useState<Trade | null>(null),
+    [review, setReview] = useState<{
+      label: string;
+      field?: 'setup' | 'symbol';
+      value?: string;
+    } | null>(null),
     [confirm, setConfirm] = useState<string | null>(null),
     [tour, setTour] = useState(-1),
     [goal, setGoal] = useState<Goal | null>(null),
@@ -200,6 +205,21 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   );
   const capital = selectedAccounts.reduce((n, a) => n + a.balance, 0),
     s = statistics(trades, capital);
+  const reviewRows = trades.filter(
+    (tr) =>
+      tr.status === 'CLOSED' &&
+      (!review?.field || tr[review.field] === review.value),
+  );
+  const openReview = (
+    label: string,
+    rows: Trade[],
+    field?: 'setup' | 'symbol',
+  ) =>
+    setReview({
+      label,
+      field,
+      value: field ? (rows[0]?.[field] ?? '') : undefined,
+    });
   const addTrade = () => {
     if (!data?.accounts.length) {
       navigate('portfolio');
@@ -214,11 +234,11 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       status: 'CLOSED',
       date: dateKey(new Date()),
       time: new Date().toTimeString().slice(0, 5),
-      entry: 2500,
-      sl: 2490,
-      tp: 2520,
-      lot: 0.1,
-      risk: 100,
+      entry: 0,
+      sl: 0,
+      tp: 0,
+      lot: 0,
+      risk: 0,
       gross: 0,
       fees: 0,
       setup: '',
@@ -691,9 +711,34 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               </div>
               <Equity trades={trades} capital={capital} t={t} />
               <div className="two-col">
-                <Breakdown trades={trades} field="setup" t={t} />
-                <Breakdown trades={trades} field="symbol" t={t} />
+                <Breakdown
+                  trades={trades.filter((tr) => tr.status === 'CLOSED')}
+                  field="setup"
+                  t={t}
+                  onReview={openReview}
+                />
+                <Breakdown
+                  trades={trades.filter((tr) => tr.status === 'CLOSED')}
+                  field="symbol"
+                  t={t}
+                  onReview={openReview}
+                />
               </div>
+              <button
+                className="button ghost"
+                onClick={() =>
+                  openReview(
+                    t('All closed trades', 'ไม้ที่ปิดแล้วทั้งหมด'),
+                    trades.filter((tr) => tr.status === 'CLOSED'),
+                  )
+                }
+              >
+                {t(
+                  'See trades behind these statistics',
+                  'ดูรายการเทรดที่ใช้คำนวณสถิตินี้',
+                )}{' '}
+                <ArrowUpRight size={16} />
+              </button>
             </>
           )}
           {page === 'risk' && (
@@ -742,11 +787,15 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                       </div>
                       <Target size={30} strokeWidth={1.3} />
                       <h2>
-                        {g?.type === 'trades' ? progress : money(progress)}
+                        {g?.type === 'trades'
+                          ? progress
+                          : money(progress).replace('$', '$\u00a0')}
                       </h2>
                       <p>
                         {t('of', 'จากเป้าหมาย')}{' '}
-                        {g?.type === 'trades' ? target : money(target)}
+                        {g?.type === 'trades'
+                          ? target
+                          : money(target).replace('$', '$\u00a0')}
                       </p>
                       <Progress
                         value={Math.max(
@@ -879,6 +928,32 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
         </DialogContent>
       </Dialog>
       <Dialog
+        open={!!review && !detail && !edit}
+        onOpenChange={(open) => {
+          if (!open) setReview(null);
+        }}
+      >
+        <DialogContent className="review-dialog">
+          <DialogTitle>{review?.label}</DialogTitle>
+          <DialogDescription>
+            {t(
+              'Source trades · selected portfolio · all recorded dates · closed trades only',
+              'รายการต้นทาง · ตามพอร์ตที่เลือก · ทุกวันที่บันทึก · เฉพาะไม้ที่ปิดแล้ว',
+            )}
+          </DialogDescription>
+          <div className="review-total">
+            <strong>
+              {money(reviewRows.reduce((sum, tr) => sum + net(tr), 0))}
+            </strong>
+            <span>
+              {reviewRows.length}{' '}
+              {t('trades · net of fees', 'ไม้ · หักค่าธรรมเนียมแล้ว')}
+            </span>
+          </div>
+          <TradeTable trades={reviewRows} onView={setDetail} t={t} />
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={!!detail}
         onOpenChange={(open) => {
           if (!open) setDetail(null);
@@ -901,6 +976,23 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                     : money(net(detail))}
                 </strong>
               </div>
+              <div className="review-result-note">
+                {t('Realized R', 'R ที่เกิดขึ้นจริง')}:{' '}
+                <b>
+                  {detail.status === 'CLOSED' && detail.risk > 0
+                    ? `${(net(detail) / detail.risk).toFixed(2)}R`
+                    : '—'}
+                </b>
+                <span>
+                  {t(
+                    'Net P&L ÷ planned risk. Open trades have no realized result.',
+                    'กำไรสุทธิ ÷ ความเสี่ยงตามแผน ไม้ที่ยังเปิดจะไม่แสดงผลที่เกิดขึ้นจริง',
+                  )}
+                </span>
+              </div>
+              <h3 className="journal-section-title">
+                {t('Execution & planned risk', 'ข้อมูลเข้าเทรดและความเสี่ยงตามแผน')}
+              </h3>
               <div className="detail-grid">
                 {[
                   [t('Entry', 'ราคาเข้า'), detail.entry],
@@ -916,26 +1008,45 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   </div>
                 ))}
               </div>
+              <h3 className="journal-section-title">
+                {t('Plan & reflection', 'แผนและบันทึกทบทวน')}
+              </h3>
               <p className="trade-notes">
                 {detail.notes || t('No notes yet.', 'ยังไม่มีบันทึก')}
               </p>
+              <h3 className="journal-section-title">
+                {t('Chart evidence', 'ภาพกราฟประกอบ')}
+              </h3>
+              {!detail.imageIds.length && (
+                <p className="journal-hint">
+                  {t(
+                    'Add screenshots when editing this trade to keep the market context.',
+                    'เพิ่มภาพกราฟในหน้าแก้ไข เพื่อเก็บบริบทตลาดของไม้นี้',
+                  )}
+                </p>
+              )}
               <div className="trade-images">
                 {detail.imageIds.map((id) => (
-                  <Link
-                    prefetch={false}
-                    key={id}
-                    href={`/api/images/${id}?mode=${mode}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <details key={id} className="journal-image">
+                    <summary>
+                      <Image
+                        unoptimized
+                        width={130}
+                        height={95}
+                        src={`/api/images/${id}?mode=${mode}`}
+                        alt={t('Trade screenshot', 'ภาพกราฟการเทรด')}
+                      />
+                      <span>{t('Expand image', 'ขยายภาพ')}</span>
+                    </summary>
                     <Image
                       unoptimized
-                      width={130}
-                      height={95}
+                      width={900}
+                      height={600}
                       src={`/api/images/${id}?mode=${mode}`}
-                      alt={t('Trade screenshot', 'ภาพกราฟการเทรด')}
+                      alt={t('Expanded trade screenshot', 'ภาพกราฟขยาย')}
+                      className="journal-image-expanded"
                     />
-                  </Link>
+                  </details>
                 ))}
               </div>
               <div className="actions">

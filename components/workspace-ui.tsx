@@ -289,10 +289,16 @@ export function Breakdown({
   trades,
   field,
   t,
+  onReview,
 }: {
   trades: Trade[];
   field: 'setup' | 'symbol';
   t: Translate;
+  onReview?: (
+    label: string,
+    trades: Trade[],
+    field: 'setup' | 'symbol',
+  ) => void;
 }) {
   const groups = [
     ...new Set(trades.map((x) => x[field] || t('Untagged', 'ไม่ระบุ'))),
@@ -305,10 +311,12 @@ export function Breakdown({
           : t('By instrument', 'แยกตามสินทรัพย์')}
       </h2>
       {groups.map((key) => {
-        const s = statistics(
-          trades.filter((x) => (x[field] || t('Untagged', 'ไม่ระบุ')) === key),
-          0,
+        const rows = trades.filter(
+          (x) =>
+            (x[field] || t('Untagged', 'ไม่ระบุ')) === key &&
+            x.status === 'CLOSED',
         );
+        const s = statistics(rows, 0);
         return (
           <div className="breakdown-row" key={key}>
             <div>
@@ -321,6 +329,15 @@ export function Breakdown({
             <b className={s.pnl >= 0 ? 'positive' : 'negative'}>
               {money(s.pnl)}
             </b>
+            {onReview && (
+              <button
+                className="text-button review-source"
+                onClick={() => onReview(key, rows, field)}
+                aria-label={t(`View trades: ${key}`, `ดูรายการเทรด: ${key}`)}
+              >
+                {t('View trades', 'ดูรายการ')} ↗
+              </button>
+            )}
           </div>
         );
       })}

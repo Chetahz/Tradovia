@@ -1,0 +1,12 @@
+{
+  "framework": null,
+  "buildCommand": "node node_modules/vite/bin/vite.js build --config preview/vite.config.ts",
+  "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
+  "outputDirectory": "dist-preview",
+  "rewrites": [
+    {
+      "source": "/((?!assets/|_next/|favicon.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

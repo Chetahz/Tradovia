@@ -9,10 +9,15 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import LaunchPricing from '@/components/launch-pricing';
 export default function Home() {
   const [th, setTh] = useState(false),
     [dark, setDark] = useState(false);
+  useEffect(() => {
+    setTh(localStorage.getItem('tradovia.language') === 'th');
+    setDark(localStorage.getItem('tradovia.theme') === 'dark');
+  }, []);
   const t = (a: string, b: string) => (th ? b : a);
   return (
     <div className={`landing ${dark ? 'dark' : ''}`} lang={th ? 'th' : 'en'}>
@@ -34,18 +39,31 @@ export default function Home() {
         <div className="actions">
           <button
             className="icon-button"
-            onClick={() => setDark(!dark)}
+            onClick={() => {
+              setDark(!dark);
+              localStorage.setItem('tradovia.theme', dark ? 'light' : 'dark');
+            }}
             aria-label="Toggle theme"
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="text-button" onClick={() => setTh(!th)}>
+          <button
+            className="text-button"
+            onClick={() => {
+              setTh(!th);
+              localStorage.setItem('tradovia.language', th ? 'en' : 'th');
+            }}
+          >
             {th ? 'EN' : 'TH'}
           </button>
           <Link prefetch={false} className="text-button sign-in" href="/auth">
             {t('Sign in', 'เข้าสู่ระบบ')}
           </Link>
-          <Link prefetch={false} className="button ink" href="/auth">
+          <Link
+            prefetch={false}
+            className="button ink"
+            href="/auth?view=signup"
+          >
             {t('Get started', 'เริ่มต้นใช้งาน')}
             <ArrowUpRight size={16} />
           </Link>
@@ -73,7 +91,11 @@ export default function Home() {
           )}
         </p>
         <div className="hero-actions">
-          <Link prefetch={false} href="/auth" className="button ink">
+          <Link
+            prefetch={false}
+            href="/auth?view=signup"
+            className="button ink"
+          >
             {t('Build your workspace', 'สร้างเวิร์กสเปซของคุณ')}
             <ArrowUpRight size={18} />
           </Link>
@@ -255,98 +277,7 @@ export default function Home() {
           <ArrowUpRight size={18} />
         </Link>
       </section>
-      <section className="land-section" id="pricing">
-        <div className="eyebrow">{t('ROOM TO GROW', 'เติบโตไปด้วยกัน')}</div>
-        <h2>{t('Find your rhythm.', 'เลือกจังหวะที่ใช่สำหรับคุณ')}</h2>
-        <p className="section-intro">
-          {t(
-            'Start with your process. Upgrade when you need more.',
-            'เริ่มจากการสร้างระบบ อัปเกรดเมื่อคุณพร้อม',
-          )}
-        </p>
-        <div className="pricing-grid">
-          {[
-            [
-              'Manual',
-              'Free',
-              '1 portfolio',
-              'Manual journal & images',
-              'Calendar, analytics & risk',
-            ],
-            [
-              'Pro',
-              '$19',
-              'Unlimited portfolios',
-              'Advanced reviews & reports',
-              'Broker sync when available',
-            ],
-            [
-              'Elite',
-              '$39',
-              'Everything in Pro',
-              'Expanded account capacity',
-              'Priority support',
-            ],
-          ].map((p, i) => (
-            <article
-              className={`price-card ${i === 1 ? 'featured' : ''}`}
-              key={p[0]}
-            >
-              <b>{p[0]}</b>
-              <h3>
-                {p[1]}
-                {i > 0 && <small> / {t('month', 'เดือน')}</small>}
-              </h3>
-              <p>
-                {t('A workspace that grows with you.', 'เวิร์กสเปซที่เติบโตไปกับคุณ')}
-              </p>
-              <Link
-                prefetch={false}
-                className={`button ${i === 1 ? 'ink' : 'ghost'}`}
-                href="/auth"
-              >
-                {t(
-                  i ? 'Explore launch plans' : 'Get started',
-                  i ? 'ดูแพ็กเกจเปิดตัว' : 'เริ่มต้นใช้งาน',
-                )}
-                <ArrowUpRight size={16} />
-              </Link>
-              <ul>
-                {p.slice(2).map((x, j) => (
-                  <li key={x}>
-                    ✓{' '}
-                    {th
-                      ? [
-                          [
-                            '1 พอร์ต',
-                            'บันทึกการเทรดและภาพกราฟ',
-                            'ปฏิทิน วิเคราะห์ และคำนวณความเสี่ยง',
-                          ],
-                          [
-                            'ไม่จำกัดพอร์ต',
-                            'ทบทวนและรายงานเชิงลึก',
-                            'ซิงก์โบรกเกอร์เมื่อเปิดให้บริการ',
-                          ],
-                          [
-                            'ทุกฟีเจอร์ของ Pro',
-                            'รองรับบัญชีเพิ่มเติม',
-                            'บริการช่วยเหลือแบบพิเศษ',
-                          ],
-                        ][i][j]
-                      : x}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-        <p className="pricing-note">
-          {t(
-            'Proposed launch pricing. Paid subscriptions and broker sync are not yet available. No charge today.',
-            'ราคาเบื้องต้นสำหรับวันเปิดตัว ยังไม่เปิดรับชำระเงินหรือซิงก์โบรกเกอร์ ไม่มีค่าใช้จ่ายในวันนี้',
-          )}
-        </p>
-      </section>
+      <LaunchPricing th={th} />
       <footer>
         <Link prefetch={false} className="brand" href="/">
           tradovia®

@@ -1,4 +1,9 @@
-import { demoData, validateTrade, type WorkspaceData } from '../lib/domain';
+import {
+  demoData,
+  emptyData,
+  validateTrade,
+  type WorkspaceData,
+} from '../lib/domain';
 const DB_NAME = 'tradovia-vercel-preview-v1';
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -37,6 +42,32 @@ async function write(store: string, key: string, value: unknown) {
   });
 }
 export const readImage = (id: string) => read<Blob>('images', id);
+export async function createPreviewWorkspace(
+  name: string,
+  portfolioName: string,
+  balance: number,
+  timezone: string,
+) {
+  if (await read('workspace', 'personal')) return;
+  const data = emptyData();
+  const portfolioId = crypto.randomUUID();
+  data.profile = { name, timezone };
+  data.portfolios = [
+    { id: portfolioId, name: portfolioName, balance, currency: 'USD' },
+  ];
+  data.accounts = [
+    {
+      id: crypto.randomUUID(),
+      portfolioId,
+      name: 'Manual account',
+      balance,
+      type: 'manual',
+    },
+  ];
+  await write('workspace', 'personal', data);
+}
+export const hasPreviewWorkspace = async () =>
+  !!(await read('workspace', 'personal'));
 function upsert<T extends { id: string }>(rows: T[], value: T) {
   const index = rows.findIndex((x) => x.id === value.id);
   if (index < 0) rows.push(value);
@@ -65,7 +96,11 @@ export function installPreviewTransport() {
       return original(input, init);
     const result = queue.then(async () => {
       try {
-        if (url.searchParams.get('mode') !== 'demo')
+        const personal =
+          location.pathname === '/workspace' &&
+          sessionStorage.getItem('tradovia.preview.session') === 'active';
+        const key = personal ? 'personal' : 'current';
+        if (url.searchParams.get('mode') !== 'demo' && !personal)
           return json({ error: 'Preview supports demo data only' }, 403);
         if (url.pathname === '/api/billing')
           return request.method === 'GET'
@@ -85,10 +120,12 @@ export function installPreviewTransport() {
         }
         if (url.pathname !== '/api/workspace')
           return json({ error: 'Not available in preview' }, 404);
-        let d = await read<WorkspaceData>('workspace', 'current');
+        let d = await read<WorkspaceData>('workspace', key);
         if (!d) {
+          if (personal)
+            return json({ error: 'Complete workspace setup first' }, 409);
           d = demoData();
-          await write('workspace', 'current', d);
+          await write('workspace', key, d);
         }
         if (request.method === 'GET') return json(d);
         if (request.method !== 'POST')
@@ -211,6 +248,8 @@ export function installPreviewTransport() {
               503,
             );
           case 'resetDemo': {
+            if (personal)
+              return json({ error: 'Only the sample demo can be reset' }, 403);
             d = demoData();
             const db = await openDB();
             await new Promise<void>((resolve, reject) => {
@@ -227,7 +266,7 @@ export function installPreviewTransport() {
           default:
             return json({ error: 'Unknown preview action' }, 400);
         }
-        await write('workspace', 'current', d);
+        await write('workspace', key, d);
         return json(d);
       } catch (error) {
         return json(

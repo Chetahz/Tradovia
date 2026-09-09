@@ -1,10 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
 
 export default function LaunchPricing({ th }: { th: boolean }) {
   const [annual, setAnnual] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<
+    'THB' | 'USD' | null
+  >(null);
+  useEffect(() => {
+    const saved = localStorage.getItem('tradovia.pricing.currency');
+    if (saved === 'THB' || saved === 'USD') setSelectedCurrency(saved);
+  }, []);
+  const currency = selectedCurrency ?? (th ? 'THB' : 'USD');
+  const price =
+    currency === 'THB'
+      ? { month: '฿199', year: '฿1,990', equivalent: '฿165.83', free: '฿0' }
+      : { month: '$5.99', year: '$59.90', equivalent: '$4.99', free: '$0' };
   const t = (en: string, thai: string) => (th ? thai : en);
   return (
     <section className="land-section" id="pricing">
@@ -28,11 +40,33 @@ export default function LaunchPricing({ th }: { th: boolean }) {
           {t('Yearly', 'รายปี')} <span>{t('Save 16.7%', 'ประหยัด 16.7%')}</span>
         </button>
       </div>
+      <div className="currency-controls">
+        <label htmlFor="pricing-currency">{t('Currency', 'สกุลเงิน')}</label>
+        <select
+          id="pricing-currency"
+          value={currency}
+          onChange={(e) => {
+            const value = e.target.value as 'THB' | 'USD';
+            setSelectedCurrency(value);
+            localStorage.setItem('tradovia.pricing.currency', value);
+          }}
+        >
+          <option value="THB">THB · ฿</option>
+          <option value="USD">USD · $</option>
+        </select>
+        <span>
+          {t(
+            'Fixed prices, not a live exchange rate',
+            'ราคาที่กำหนดไว้ ไม่ใช่อัตราแลกเปลี่ยนสด',
+          )}
+        </span>
+      </div>
       <div className="pricing-grid launch-pricing">
         <article className="price-card">
           <b>Free</b>
           <h3>
-            ฿0<small> / {t('forever', 'ตลอดไป')}</small>
+            {price.free}
+            <small> / {t('forever', 'ตลอดไป')}</small>
           </h3>
           <p>
             {t(
@@ -64,16 +98,19 @@ export default function LaunchPricing({ th }: { th: boolean }) {
             <span>{t('Launch plan', 'แพ็กเกจเปิดตัว')}</span>
           </div>
           <h3>
-            {annual ? '฿1,990' : '฿199'}
+            {annual ? price.year : price.month}
             <small> / {annual ? t('year', 'ปี') : t('month', 'เดือน')}</small>
           </h3>
           <p>
             {annual
               ? t(
-                  '฿165.83/month equivalent · ฿1,990 billed yearly',
-                  'เฉลี่ย ฿165.83/เดือน · เรียกเก็บ ฿1,990 ต่อปี',
+                  `${price.equivalent}/month equivalent · ${price.year} billed yearly`,
+                  `เฉลี่ย ${price.equivalent}/เดือน · เรียกเก็บ ${price.year} ต่อปี`,
                 )
-              : t('฿199 billed monthly', 'เรียกเก็บ ฿199 ทุกเดือน')}
+              : t(
+                  `${price.month} billed monthly`,
+                  `เรียกเก็บ ${price.month} ทุกเดือน`,
+                )}
           </p>
           <Link className="button ink" href="/auth?view=signup">
             {t('Try the free preview', 'ทดลองพรีวิวฟรี')}
@@ -99,8 +136,8 @@ export default function LaunchPricing({ th }: { th: boolean }) {
       </div>
       <p className="pricing-note">
         {t(
-          'Launch pricing in Thai baht (THB). Preview access is free; no payment is collected. Pro features and usage limits will be confirmed before subscriptions open. AI and broker sync are not included in this preview.',
-          'ราคาเปิดตัวเป็นเงินบาท (THB) พรีวิวใช้ฟรี ไม่มีการเรียกเก็บเงิน ฟีเจอร์และขีดจำกัดของ Pro จะยืนยันก่อนเปิดสมัครแบบชำระเงิน พรีวิวนี้ยังไม่รวม AI และการซิงก์โบรกเกอร์',
+          `Proposed launch pricing in ${currency}. Preview access is free; no payment is collected. Pro features and usage limits will be confirmed before subscriptions open. AI and broker sync are not included in this preview.`,
+          `ราคาเสนอสำหรับเปิดตัวในสกุล ${currency} พรีวิวใช้ฟรี ไม่มีการเรียกเก็บเงิน ฟีเจอร์และขีดจำกัดของ Pro จะยืนยันก่อนเปิดสมัครแบบชำระเงิน พรีวิวนี้ยังไม่รวม AI และการซิงก์โบรกเกอร์`,
         )}
       </p>
     </section>

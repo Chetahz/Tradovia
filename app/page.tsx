@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import LaunchPricing from '@/components/launch-pricing';
+import { LandingGuide, LandingFAQ } from '@/components/landing-guide';
 export default function Home() {
   const [th, setTh] = useState(false),
     [dark, setDark] = useState(false);
@@ -115,13 +116,13 @@ export default function Home() {
             <Link prefetch={false} className="brand" href="/demo">
               <span className="brand-mark">t</span>tradovia
             </Link>
-            <small>WORKSPACE</small>
+            <small>{t('WORKSPACE', 'เวิร์กสเปซ')}</small>
             {[
-              'Overview',
-              'Trade Journal',
-              'Trading Calendar',
-              'Analytics',
-              'Risk Center',
+              t('Overview', 'ภาพรวม'),
+              t('Trade Journal', 'บันทึกการเทรด'),
+              t('Trading Calendar', 'ปฏิทินการเทรด'),
+              t('Analytics', 'วิเคราะห์ผล'),
+              t('Risk Center', 'บริหารความเสี่ยง'),
             ].map((x, i) => (
               <div className={i === 0 ? 'selected' : ''} key={x}>
                 <ChartNoAxesCombined size={15} />
@@ -129,7 +130,8 @@ export default function Home() {
               </div>
             ))}
             <span className="preview-account">
-              Demo Portfolio <span className="status-dot" />
+              {t('Demo Portfolio', 'พอร์ตตัวอย่าง')}{' '}
+              <span className="status-dot" />
             </span>
           </div>
           <div className="preview-main">
@@ -150,14 +152,16 @@ export default function Home() {
             </p>
             <div className="preview-metrics">
               {[
-                ['Net P&L', '+$1,284.00'],
-                ['Win rate', '62.5%'],
+                [t('Net P&L', 'กำไร/ขาดทุนสุทธิ'), '+$1,284.00'],
+                [t('Win rate', 'อัตราชนะ'), '62.5%'],
                 ['Profit factor', '2.18'],
               ].map((x) => (
                 <div key={x[0]}>
                   <span>{x[0]}</span>
                   <strong>{x[1]}</strong>
-                  <small>Illustrative demo preview</small>
+                  <small>
+                    {t('Illustrative demo preview', 'ข้อมูลตัวอย่างประกอบ')}
+                  </small>
                 </div>
               ))}
             </div>
@@ -174,7 +178,10 @@ export default function Home() {
               <svg
                 viewBox="0 0 800 175"
 
-                aria-label="Illustrative equity curve"
+                aria-label={t(
+                  'Illustrative equity curve',
+                  'ตัวอย่างกราฟมูลค่าพอร์ต',
+                )}
               >
                 <defs>
                   <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
@@ -194,10 +201,11 @@ export default function Home() {
                 />
               </svg>
               <div className="chart-axis">
-                <span>WEEK 01</span>
-                <span>WEEK 02</span>
-                <span>WEEK 03</span>
-                <span>WEEK 04</span>
+                {[1, 2, 3, 4].map((week) => (
+                  <span key={week}>
+                    {t('WEEK', 'สัปดาห์')} 0{week}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -277,7 +285,9 @@ export default function Home() {
           <ArrowUpRight size={18} />
         </Link>
       </section>
+      <LandingGuide th={th} />
       <LaunchPricing th={th} />
+      <LandingFAQ th={th} />
       <footer>
         <Link prefetch={false} className="brand" href="/">
           tradovia®

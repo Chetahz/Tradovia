@@ -360,7 +360,8 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       <Sidebar className="app-sidebar">
         <SidebarHeader>
           <Link prefetch={false} className="brand" href="/">
-            <span className="brand-mark">t</span>tradovia<sup>®</sup>
+            <span className="brand-mark" aria-hidden="true" />
+            tradovia
           </Link>
           <div className="portfolio-switch">
             <Wallet size={17} />

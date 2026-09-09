@@ -5,7 +5,7 @@
   "outputDirectory": "dist-preview",
   "rewrites": [
     {
-      "source": "/((?!assets/|_next/|favicon.svg).*)",
+      "source": "/((?!assets/|_next/|brand/|manifest.webmanifest|favicon.svg).*)",
       "destination": "/index.html"
     }
   ]

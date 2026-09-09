@@ -24,7 +24,8 @@ export default function Home() {
     <div className={`landing ${dark ? 'dark' : ''}`} lang={th ? 'th' : 'en'}>
       <header className="land-nav">
         <Link prefetch={false} href="/" className="brand">
-          <span className="brand-mark">t</span>tradovia<sup>®</sup>
+          <span className="brand-mark" aria-hidden="true" />
+          tradovia
         </Link>
         <nav>
           <Link prefetch={false} href="#workspace">
@@ -35,6 +36,9 @@ export default function Home() {
           </Link>
           <Link prefetch={false} href="#pricing">
             {t('Pricing', 'แพ็กเกจ')}
+          </Link>
+          <Link prefetch={false} href="#faq">
+            {t('FAQ', 'คำถามที่พบบ่อย')}
           </Link>
         </nav>
         <div className="actions">
@@ -114,7 +118,8 @@ export default function Home() {
         <div id="workspace" className="product-preview">
           <div className="preview-side">
             <Link prefetch={false} className="brand" href="/demo">
-              <span className="brand-mark">t</span>tradovia
+              <span className="brand-mark" aria-hidden="true" />
+              tradovia
             </Link>
             <small>{t('WORKSPACE', 'เวิร์กสเปซ')}</small>
             {[
@@ -290,7 +295,7 @@ export default function Home() {
       <LandingFAQ th={th} />
       <footer>
         <Link prefetch={false} className="brand" href="/">
-          tradovia®
+          tradovia
         </Link>
         <p>{t('Trade with intention.', 'เทรดอย่างมีเป้าหมาย')}</p>
         <span>© {new Date().getFullYear()} Tradovia</span>

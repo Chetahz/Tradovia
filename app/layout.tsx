@@ -20,6 +20,9 @@ const thaiFont = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   title: 'Tradovia — Your Trading Operating System',
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/favicon.svg', apple: '/brand/icon-180.png' },
+  appleWebApp: { capable: true, title: 'Tradovia' },
 };
 
 export default function RootLayout({

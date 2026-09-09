@@ -139,7 +139,8 @@ export default function PreviewAuth() {
     >
       <header className="auth-nav">
         <a className="brand" href="/">
-          <span className="brand-mark">t</span>tradovia
+          <span className="brand-mark" aria-hidden="true" />
+          tradovia
         </a>
         <div className="actions">
           <button className="text-button" onClick={() => setTh(!th)}>

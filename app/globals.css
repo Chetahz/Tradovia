@@ -245,10 +245,11 @@ button:disabled {
   height: 31px;
   width: 31px;
   background: var(--primary);
-  color: var(--primary-foreground);
+  flex-shrink: 0;
+  mask: url('/brand/tradovia-mark.svg') center / contain no-repeat;
   display: grid;
   place-items: center;
-  border-radius: 9px;
+  border-radius: 0;
   font-size: 28px;
   font-style: italic;
   font-family: Georgia, serif;
@@ -927,8 +928,17 @@ button:disabled {
   color: var(--muted-foreground);
 }
 @media (max-width: 900px) {
+  .land-nav {
+    flex-wrap: wrap;
+  }
   .land-nav nav {
-    display: none;
+    display: flex;
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    flex-wrap: wrap;
   }
   .asset-strip {
     gap: 25px;

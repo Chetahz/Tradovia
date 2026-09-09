@@ -11,7 +11,8 @@ export default function AuthScreen({ signInUrl }: { signInUrl: string }) {
     <main className={`auth-page ${dark ? 'dark' : ''}`} lang={th ? 'th' : 'en'}>
       <div className="actions">
         <Link className="brand" href="/">
-          <span className="brand-mark">t</span>tradovia
+          <span className="brand-mark" aria-hidden="true" />
+          tradovia
         </Link>
         <button className="text-button" onClick={() => setTh(!th)}>
           {th ? 'EN' : 'TH'}

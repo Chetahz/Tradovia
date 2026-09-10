@@ -8,6 +8,14 @@ import {
 } from '@/lib/trade-csv';
 import { money, net, type Account, type Trade } from '@/lib/domain';
 import type { Translate } from './workspace-ui';
+import { Upload } from 'lucide-react';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
 
 export default function CsvImport({
   accounts,
@@ -109,32 +117,24 @@ export default function CsvImport({
     }
   };
   return (
-    <section
-      className="panel csv-import"
-      aria-label={t('Import trades', 'นำเข้าการเทรด')}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!busy) setOpen(next);
+      }}
     >
-      <div className="actions" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <h2>{t('Bring your trades together.', 'รวมประวัติเทรดไว้ที่เดียว')}</h2>
-          <p className="muted-copy">
-            {t(
-              'Import CSV · Preview before saving',
-              'นำเข้า CSV · ตรวจรายการก่อนบันทึก',
-            )}
-          </p>
-        </div>
-        <button
-          className="button ghost compact"
-          aria-expanded={open}
-          disabled={busy}
-          onClick={() => setOpen(!open)}
-        >
-          {open
-            ? t('Close import', 'ปิดการนำเข้า')
-            : t('Import CSV', 'นำเข้า CSV')}
-        </button>
-      </div>
-      {open && (
+      <DialogTrigger className="button ghost compact">
+        <Upload size={16} />
+        {t('Import CSV', 'นำเข้า CSV')}
+      </DialogTrigger>
+      <DialogContent className="trade-dialog csv-import">
+        <DialogTitle>{t('Import trades', 'นำเข้าการเทรด')}</DialogTitle>
+        <DialogDescription>
+          {t(
+            'Choose an account, preview your CSV, then confirm the trades to import.',
+            'เลือกบัญชี ตรวจไฟล์ CSV แล้วค่อยยืนยันรายการที่ต้องการนำเข้า',
+          )}
+        </DialogDescription>
         <div className="mt-6">
           <p className="journal-hint">
             {t(
@@ -357,7 +357,7 @@ export default function CsvImport({
             </>
           )}
         </div>
-      )}
-    </section>
+      </DialogContent>
+    </Dialog>
   );
 }

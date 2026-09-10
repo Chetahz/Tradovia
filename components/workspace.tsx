@@ -645,14 +645,6 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
             />
           )}
           {page === 'journal' && (
-            <CsvImport
-              accounts={selectedAccounts}
-              trades={data.trades}
-              t={t}
-              save={(trade) => mutate('saveTrade', trade)}
-            />
-          )}
-          {page === 'journal' && (
             <QuickReview
               key={portfolio}
               trades={trades}
@@ -686,6 +678,12 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                     { value: 'CLOSED', label: t('Closed', 'ปิดแล้ว') },
                     { value: 'OPEN', label: t('Open', 'ยังไม่ปิด') },
                   ]}
+                />
+                <CsvImport
+                  accounts={selectedAccounts}
+                  trades={data.trades}
+                  t={t}
+                  save={(trade) => mutate('saveTrade', trade)}
                 />
                 <button
                   className="button ghost compact"

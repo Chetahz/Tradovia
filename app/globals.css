@@ -2495,3 +2495,62 @@ html[lang='th'] .hero h1 {
 .workspace-shell [data-slot='table-head'] {
   font-size: 12px;
 }
+
+.workspace-guide {
+  margin-bottom: 20px;
+}
+.workspace-guide .section-heading {
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.workspace-guide p {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 8px 0 14px;
+}
+.workspace-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.workspace-guide-grid h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.guide-task {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+.guide-task span {
+  color: var(--positive);
+}
+.guide-task small {
+  color: var(--muted-foreground);
+}
+.guide-task:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.guide-reopen {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.guide-empty {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+@media (max-width: 760px) {
+  .workspace-guide-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

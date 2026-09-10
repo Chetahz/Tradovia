@@ -77,6 +77,7 @@ import {
 import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
+import WorkspaceGuide from './workspace-guide';
 import { AccountViews } from './account-views';
 const pages = [
   ['overview', 'Overview', 'ภาพรวม', LayoutDashboard],
@@ -536,6 +537,16 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               {data.profile.timezone}
             </span>
           </div>
+          <WorkspaceGuide
+            key={`${mode}.${page}`}
+            page={page}
+            mode={mode}
+            hasPortfolio={data.portfolios.length > 0}
+            hasTrades={data.trades.length > 0}
+            t={t}
+            navigate={navigate}
+            addTrade={addTrade}
+          />
           {page === 'overview' && (
             <>
               <div className="metrics-grid">

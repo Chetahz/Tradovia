@@ -1637,6 +1637,30 @@ button:disabled {
   grid-template-columns: minmax(0, 1.5fr) minmax(290px, 1fr);
   gap: 20px;
 }
+.risk-contract-summary {
+  background: var(--secondary);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 13px;
+}
+.risk-contract-summary p {
+  margin-top: 8px;
+  color: var(--muted-foreground);
+  line-height: 1.7;
+}
+.risk-contract-details {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.risk-contract-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 0;
+}
+.risk-contract-details a {
+  text-decoration: underline;
+}
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

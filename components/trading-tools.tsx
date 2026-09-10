@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -242,6 +242,13 @@ export function TradingCalendar({
     </div>
   );
 }
+const examplePrices = (asset: string) =>
+  asset === 'XAUUSD'
+    ? { entry: 2500, stop: 2490 }
+    : asset === 'EURUSD' || asset === 'GBPUSD'
+      ? { entry: 1.08, stop: 1.075 }
+      : { entry: 100, stop: 95 };
+
 export function RiskCalculator({
   capital,
   t,
@@ -250,6 +257,9 @@ export function RiskCalculator({
   t: Translate;
 }) {
   const [asset, setAsset] = useState<keyof typeof assets>('XAUUSD');
+  const [custom, setCustom] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [ready, setReady] = useState(false);
   const [v, setV] = useState<RiskInput>({
     balance: capital,
     percent: 1,
@@ -259,7 +269,69 @@ export function RiskCalculator({
     costPerUnit: 0,
     max: 100,
   });
-  const set = (key: keyof RiskInput, n: number) => setV({ ...v, [key]: n });
+  const specKeys = [
+    'tickSize',
+    'tickValue',
+    'step',
+    'min',
+    'max',
+    'costPerUnit',
+  ] as const;
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem('tradovia-risk-contract-v1') || 'null',
+      );
+      if (
+        saved &&
+        Object.hasOwn(assets, saved.asset) &&
+        typeof saved.custom === 'boolean' &&
+        specKeys.every(
+          (key) =>
+            typeof saved.spec?.[key] === 'number' &&
+            Number.isFinite(saved.spec[key]) &&
+            (key === 'costPerUnit'
+              ? saved.spec[key] >= 0
+              : saved.spec[key] > 0),
+        )
+      ) {
+        setAsset(saved.asset);
+        setCustom(saved.custom);
+        setDetailsOpen(
+          saved.custom ||
+            (saved.asset !== 'XAUUSD' && saved.asset !== 'EURUSD'),
+        );
+        setV((current) => ({
+          ...current,
+          ...examplePrices(saved.asset),
+          ...Object.fromEntries(specKeys.map((key) => [key, saved.spec[key]])),
+        }));
+      }
+    } catch {
+      /* Browser storage is optional. */
+    }
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      localStorage.setItem(
+        'tradovia-risk-contract-v1',
+        JSON.stringify({
+          asset,
+          custom,
+          spec: Object.fromEntries(specKeys.map((key) => [key, v[key]])),
+        }),
+      );
+    } catch {
+      /* Keep the calculator usable when storage is unavailable. */
+    }
+  }, [ready, asset, custom, v]);
+  const set = (key: keyof RiskInput, n: number) => {
+    if (specKeys.some((specKey) => specKey === key)) setCustom(true);
+    setV({ ...v, [key]: n });
+  };
+  const standard = asset === 'XAUUSD' || asset === 'EURUSD';
   let result: ReturnType<typeof sizePosition> | null = null,
     error = '';
   try {
@@ -290,21 +362,14 @@ export function RiskCalculator({
               onChange={(a) => {
                 const next = a as keyof typeof assets;
                 setAsset(next);
+                setCustom(false);
+                setDetailsOpen(next !== 'XAUUSD' && next !== 'EURUSD');
                 setV({
                   ...v,
                   ...assets[next],
-                  entry:
-                    next.includes('USD') &&
-                    next !== 'XAUUSD' &&
-                    next !== 'BTCUSD'
-                      ? 1.08
-                      : 100,
-                  stop:
-                    next.includes('USD') &&
-                    next !== 'XAUUSD' &&
-                    next !== 'BTCUSD'
-                      ? 1.075
-                      : 95,
+                  max: 100,
+                  costPerUnit: 0,
+                  ...examplePrices(next),
                 });
               }}
               options={Object.entries(assets).map(([key, a]) => ({
@@ -330,32 +395,101 @@ export function RiskCalculator({
               onChange={(e) => set(k, Number(e.target.value))}
             />
           ))}
-          <div className="full form-divider">
-            {t('CONTRACT SPECIFICATIONS', 'สเปกสัญญา')}
+          <div className="full risk-contract-summary">
+            <strong>
+              {custom
+                ? t('Custom contract settings', 'ข้อมูลสัญญาที่คุณปรับเอง')
+                : standard
+                  ? t('Standard account', 'บัญชีมาตรฐาน')
+                  : t(
+                      'Example contract — check your broker',
+                      'สัญญาตัวอย่าง — ตรวจสอบกับโบรกเกอร์',
+                    )}
+            </strong>
+            <p>
+              {!custom && standard
+                ? asset === 'XAUUSD'
+                  ? t(
+                      '1 lot = 100 oz · Minimum 0.01 lot',
+                      '1 lot = 100 ออนซ์ · ขั้นต่ำ 0.01 lot',
+                    )
+                  : t(
+                      '1 lot = 100,000 EUR · Minimum 0.01 lot',
+                      '1 lot = 100,000 EUR · ขั้นต่ำ 0.01 lot',
+                    )
+                : t(
+                    'Check the values below against your account specifications.',
+                    'ตรวจสอบค่าด้านล่างให้ตรงกับข้อมูลสัญญาของบัญชีคุณ',
+                  )}
+            </p>
+            <p>
+              {t(
+                'Using a Micro / Cent account? Open the details and enter its contract values. Settings are remembered on this browser.',
+                'ใช้บัญชี Micro / Cent? เปิดรายละเอียดเพื่อกรอกค่าสัญญาของบัญชีนั้น ระบบจำค่าที่เลือกไว้ในเบราว์เซอร์นี้',
+              )}
+            </p>
           </div>
-          {(
-            [
-              ['tickSize', 'Tick size', 'ขนาด Tick'],
-              [
-                'tickValue',
-                'Tick value / unit (USD)',
-                'มูลค่า Tick ต่อหน่วย (USD)',
-              ],
-              ['step', 'Volume step', 'ขั้นขนาดสัญญา'],
-              ['min', 'Minimum size', 'ขนาดขั้นต่ำ'],
-              ['max', 'Maximum size', 'ขนาดสูงสุด'],
-              ['costPerUnit', 'Costs per unit (USD)', 'ต้นทุนต่อหน่วย (USD)'],
-            ] as const
-          ).map(([k, en, th]) => (
-            <Field
-              key={k}
-              label={t(en, th)}
-              type="number"
-              step="any"
-              value={v[k]}
-              onChange={(e) => set(k, Number(e.target.value))}
-            />
-          ))}
+          <details
+            className="full risk-contract-details"
+            open={detailsOpen}
+            onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+          >
+            <summary>
+              {t('Contract details / Customize', 'รายละเอียดสัญญา / ปรับแต่ง')}
+            </summary>
+            <p className="muted-copy">
+              {t(
+                'Tick size is the price change per tick. Tick value is its USD value for 1 lot (or 1 unit shown in the result). Costs cover entry and exit per lot / unit.',
+                'ขนาด Tick คือช่วงราคาต่อ Tick ส่วนมูลค่า Tick คือเงิน USD ต่อ 1 lot (หรือ 1 หน่วยตามผลลัพธ์) ต้นทุนรวมค่าเข้าและออกต่อ lot / หน่วย',
+              )}
+            </p>
+            {!custom && standard && (
+              <p className="muted-copy">
+                {t('Standard contract reference:', 'อ้างอิงขนาดสัญญามาตรฐาน:')}{' '}
+                <a
+                  href={
+                    asset === 'XAUUSD'
+                      ? 'https://cdn.icmarkets.com/uploads/Commodity-Specification-Sheet.pdf'
+                      : 'https://cdn.icmarkets.eu/uploads/EU/KIID_ON_FX.pdf'
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  IC Markets
+                </a>
+                {' · '}
+                {t(
+                  'Volume limits and costs remain adjustable for your account.',
+                  'ปรับข้อจำกัด lot และต้นทุนให้ตรงกับบัญชีได้',
+                )}
+              </p>
+            )}
+            <div className="form-grid mt-6">
+              {(
+                [
+                  ['tickSize', 'Tick size', 'ขนาด Tick'],
+                  [
+                    'tickValue',
+                    'Tick value / unit (USD)',
+                    'มูลค่า Tick ต่อหน่วย (USD)',
+                  ],
+                  ['step', 'Volume step', 'ขั้นขนาดสัญญา'],
+                  ['min', 'Minimum size', 'ขนาดขั้นต่ำ'],
+                  ['max', 'Maximum size', 'ขนาดสูงสุด'],
+                  ['costPerUnit', 'Costs per unit (USD)', 'ต้นทุนต่อหน่วย (USD)'],
+                ] as const
+              ).map(([k, en, th]) => (
+                <Field
+                  key={k}
+                  label={t(en, th)}
+                  type="number"
+                  step="any"
+                  value={v[k]}
+                  onChange={(e) => set(k, Number(e.target.value))}
+                />
+              ))}
+            </div>
+          </details>
         </div>
       </div>
       <div className="panel risk-result">
@@ -402,8 +536,8 @@ export function RiskCalculator({
         )}
         <p>
           {t(
-            'Size is rounded down so modeled risk stays within your budget. Defaults are examples: verify tick value, contract size and currency conversion with your broker.',
-            'ปัดขนาดลงเพื่อให้ความเสี่ยงตามสูตรไม่เกินงบ ค่าเริ่มต้นเป็นตัวอย่าง โปรดตรวจสอบมูลค่า Tick ขนาดสัญญา และอัตราแลกเปลี่ยนกับโบรกเกอร์',
+            'Size is rounded down to stay within the modeled risk budget. This calculator uses USD. Contract details and costs can be adjusted to match your account.',
+            'ปัดขนาดลงเพื่อให้ความเสี่ยงตามสูตรไม่เกินงบ คำนวณเป็น USD ปรับรายละเอียดสัญญาและต้นทุนให้ตรงกับบัญชีได้',
           )}
         </p>
         <small>

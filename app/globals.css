@@ -1637,6 +1637,42 @@ button:disabled {
   grid-template-columns: minmax(0, 1.5fr) minmax(290px, 1fr);
   gap: 20px;
 }
+.csv-import {
+  margin-bottom: 20px;
+}
+.csv-import > .actions {
+  flex-wrap: wrap;
+}
+.csv-import summary {
+  cursor: pointer;
+}
+.csv-preview-table {
+  overflow: auto;
+  max-height: 420px;
+  margin-top: 18px;
+}
+.csv-preview-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.csv-preview-table th,
+.csv-preview-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.csv-preview-table th {
+  position: sticky;
+  top: 0;
+  background: var(--background);
+}
+.csv-preview-table td p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 400px;
+}
 .risk-contract-summary {
   background: var(--secondary);
   border-radius: 10px;

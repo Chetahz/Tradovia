@@ -78,6 +78,7 @@ import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
 import QuickReview from './quick-review';
+import CsvImport from './csv-import';
 import DeepAnalysis from './deep-analysis';
 import Playbooks from './playbooks';
 import WorkspaceGuide from './workspace-guide';
@@ -641,6 +642,14 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               t={t}
               save={(p) => mutate('savePlaybook', p)}
               onView={setDetail}
+            />
+          )}
+          {page === 'journal' && (
+            <CsvImport
+              accounts={selectedAccounts}
+              trades={data.trades}
+              t={t}
+              save={(trade) => mutate('saveTrade', trade)}
             />
           )}
           {page === 'journal' && (

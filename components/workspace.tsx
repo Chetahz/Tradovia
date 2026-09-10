@@ -77,6 +77,7 @@ import {
 import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
+import DeepAnalysis from './deep-analysis';
 import Playbooks from './playbooks';
 import WorkspaceGuide from './workspace-guide';
 import { AccountViews } from './account-views';
@@ -117,6 +118,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
     [formKind, setFormKind] = useState('');
   const t: Translate = (en, thai) => (th ? thai : en);
   const endpoint = `/api/workspace?mode=${mode}`;
+  const [analysisTab, setAnalysisTab] = useState('summary');
   const [preferencesReady, setPreferencesReady] = useState(false);
   const reload = useCallback(async () => {
     setError('');
@@ -696,6 +698,25 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
             <TradingCalendar trades={trades} t={t} onView={setDetail} />
           )}
           {page === 'analytics' && (
+            <div className="daily-options" style={{ marginBottom: 20 }}>
+              <button
+                aria-pressed={analysisTab === 'summary'}
+                onClick={() => setAnalysisTab('summary')}
+              >
+                {t('Overview', 'ภาพรวม')}
+              </button>
+              <button
+                aria-pressed={analysisTab === 'deep'}
+                onClick={() => setAnalysisTab('deep')}
+              >
+                Deep Analysis / Insights
+              </button>
+            </div>
+          )}
+          {page === 'analytics' && analysisTab === 'deep' && (
+            <DeepAnalysis trades={trades} t={t} onView={setDetail} />
+          )}
+          {page === 'analytics' && analysisTab === 'summary' && (
             <>
               <div className="metrics-grid">
                 <Metric

@@ -77,11 +77,13 @@ import {
 import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
+import Playbooks from './playbooks';
 import WorkspaceGuide from './workspace-guide';
 import { AccountViews } from './account-views';
 const pages = [
   ['overview', 'Overview', 'ภาพรวม', LayoutDashboard],
   ['journal', 'Trade Journal', 'บันทึกการเทรด', BookOpen],
+  ['playbook', 'Playbook', 'แผนการเทรด', BookOpen],
   ['calendar', 'Trading Calendar', 'ปฏิทินการเทรด', CalendarDays],
   ['analytics', 'Analytics', 'วิเคราะห์ผล', ChartNoAxesCombined],
   ['risk', 'Risk Center', 'บริหารความเสี่ยง', ShieldCheck],
@@ -629,6 +631,15 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               </div>
             </>
           )}
+          {page === 'playbook' && (
+            <Playbooks
+              plans={data.playbooks || []}
+              trades={trades}
+              t={t}
+              save={(p) => mutate('savePlaybook', p)}
+              onView={setDetail}
+            />
+          )}
           {page === 'journal' && (
             <div className="panel">
               <div className="journal-toolbar">
@@ -928,6 +939,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               key={edit.id}
               trade={edit}
               accounts={data.accounts}
+              playbooks={data.playbooks || []}
               mode={mode}
               t={t}
               busy={busy}
@@ -1024,6 +1036,35 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                 {t('Plan & reflection', 'แผนและบันทึกทบทวน')}
               </h3>
               <p className="trade-notes">
+                {detail.playbook && (
+                  <span
+                    style={{
+                      display: 'block',
+                      whiteSpace: 'pre-wrap',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <strong>
+                      {detail.playbook.name} · v{detail.playbook.version}
+                    </strong>
+                    <br />
+                    {detail.playbook.entry}
+                    <br />
+                    {detail.playbook.exit}
+                    <br />
+                    {detail.playbook.risk}
+                    <br />
+                    {detail.playbook.checklist}
+                    <br />
+                    {detail.adherence === 'yes'
+                      ? t('Followed plan', 'ตามแผน')
+                      : detail.adherence === 'partial'
+                        ? t('Partly followed', 'ตามแผนบางส่วน')
+                        : detail.adherence === 'no'
+                          ? t('Outside plan', 'นอกแผน')
+                          : t('Not reviewed', 'ยังไม่ทบทวน')}
+                  </span>
+                )}
                 {detail.notes || t('No notes yet.', 'ยังไม่มีบันทึก')}
               </p>
               <h3 className="journal-section-title">

@@ -8,12 +8,14 @@ import {
   net,
   money,
   type Trade,
+  type Playbook,
   type Account,
   type WorkspaceData,
 } from '@/lib/domain';
 export function TradeForm({
   trade,
   accounts,
+  playbooks = [],
   mode,
   t,
   busy,
@@ -22,6 +24,7 @@ export function TradeForm({
 }: {
   trade: Trade;
   accounts: Account[];
+  playbooks?: Playbook[];
   mode: string;
   t: Translate;
   busy: boolean;
@@ -55,6 +58,62 @@ export function TradeForm({
         )}
       </p>
       <div className="form-grid">
+        <label className="form-field full">
+          <span>Playbook</span>
+          <select
+            value={v.playbook?.id || ''}
+            onChange={(e) => {
+              const p = playbooks.find((p) => p.id === e.target.value);
+              setV({ ...v, playbook: p ? { ...p } : undefined, adherence: '' });
+            }}
+          >
+            <option value="">{t('No plan selected', 'ยังไม่ระบุแผน')}</option>
+            {v.playbook && (
+              <option value={v.playbook.id}>
+                {v.playbook.name} · v{v.playbook.version}{' '}
+                {t('(saved version)', '(ฉบับที่เลือก)')}
+              </option>
+            )}
+            {playbooks
+              .filter((p) => !p.archived && p.id !== v.playbook?.id)
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} · v{p.version}
+                </option>
+              ))}
+          </select>
+        </label>
+        {v.playbook && (
+          <div className="form-field full">
+            <details>
+              <summary>
+                {t('View selected plan', 'ดูแผนที่เลือก')} · v{v.playbook.version}
+              </summary>
+              <p style={{ whiteSpace: 'pre-wrap' }}>
+                {[
+                  v.playbook.entry,
+                  v.playbook.exit,
+                  v.playbook.risk,
+                  v.playbook.checklist,
+                ]
+                  .filter(Boolean)
+                  .join('\n\n')}
+              </p>
+            </details>
+            <label>
+              {t('Did you follow this plan?', 'ทำตามแผนนี้หรือไม่?')}
+              <select
+                value={v.adherence || ''}
+                onChange={(e) => set('adherence', e.target.value)}
+              >
+                <option value="">{t('Not reviewed', 'ยังไม่ทบทวน')}</option>
+                <option value="yes">{t('Followed', 'ตามแผน')}</option>
+                <option value="partial">{t('Partly', 'บางส่วน')}</option>
+                <option value="no">{t('Outside plan', 'นอกแผน')}</option>
+              </select>
+            </label>
+          </div>
+        )}
         <label className="form-field full">
           <span>{t('Trading account', 'บัญชีเทรด')}</span>
           <Pick

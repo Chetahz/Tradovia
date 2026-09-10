@@ -136,8 +136,47 @@ export function installPreviewTransport() {
           value: any;
         };
         switch (action) {
+          case 'savePlaybook': {
+            if (
+              !v ||
+              typeof v.name !== 'string' ||
+              !v.name.trim() ||
+              typeof v.entry !== 'string' ||
+              !v.entry.trim()
+            )
+              throw Error('Name and entry conditions are required');
+            d.playbooks ??= [];
+            const old = d.playbooks.find((p) => p.id === v.id);
+            const plan = {
+              id: old?.id || crypto.randomUUID(),
+              name: v.name.trim().slice(0, 120),
+              entry: v.entry.trim().slice(0, 4000),
+              technique: String(v.technique || '').slice(0, 120),
+              exit: String(v.exit || '').slice(0, 4000),
+              risk: String(v.risk || '').slice(0, 4000),
+              checklist: String(v.checklist || '').slice(0, 4000),
+              archived: Boolean(v.archived),
+              version: (old?.version || 0) + 1,
+            };
+            upsert(d.playbooks, plan);
+            break;
+          }
           case 'saveTrade': {
             const trade = validateTrade(v);
+            const existing = d.trades.find((t) => t.id === trade.id);
+            if (v.playbook) {
+              const snapshot =
+                existing && existing.playbook && existing.playbook.id === v.playbook.id &&
+                existing.playbook.version === v.playbook.version
+                  ? existing.playbook
+                  : d.playbooks?.find(
+                      (p) => p.id === v.playbook.id && !p.archived,
+                    );
+              if (!snapshot) throw Error('Playbook is unavailable');
+              trade.playbook = { ...snapshot };
+            }
+            if (['yes', 'partial', 'no', ''].includes(v.adherence))
+              trade.adherence = v.adherence;
             if (!d.accounts.some((a) => a.id === trade.accountId))
               throw Error('Account not found');
             upsert(d.trades, trade);

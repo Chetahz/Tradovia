@@ -1,4 +1,17 @@
+export type Playbook = {
+  id: string;
+  name: string;
+  technique: string;
+  entry: string;
+  exit: string;
+  risk: string;
+  checklist: string;
+  archived: boolean;
+  version: number;
+};
 export type Trade = {
+  playbook?: Playbook;
+  adherence?: 'yes' | 'partial' | 'no' | '';
   id: string;
   accountId: string;
   symbol: string;
@@ -46,6 +59,7 @@ export type Connection = {
   error: string | null;
 };
 export type WorkspaceData = {
+  playbooks?: Playbook[];
   portfolios: Portfolio[];
   accounts: Account[];
   trades: Trade[];

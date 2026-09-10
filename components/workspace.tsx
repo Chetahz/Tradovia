@@ -77,6 +77,7 @@ import {
 import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
+import QuickReview from './quick-review';
 import DeepAnalysis from './deep-analysis';
 import Playbooks from './playbooks';
 import WorkspaceGuide from './workspace-guide';
@@ -639,6 +640,16 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               trades={trades}
               t={t}
               save={(p) => mutate('savePlaybook', p)}
+              onView={setDetail}
+            />
+          )}
+          {page === 'journal' && (
+            <QuickReview
+              key={portfolio}
+              trades={trades}
+              plans={data.playbooks || []}
+              t={t}
+              save={(tr) => mutate('saveTrade', tr)}
               onView={setDetail}
             />
           )}

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Landing from '../app/page';
 import Workspace from '../components/workspace';
 import PreviewAuth from './auth';
+import DailyFlow from './daily-flow';
 import { installPreviewTransport } from './storage';
 import '../app/globals.css';
 import './fonts.css';
@@ -31,7 +32,9 @@ createRoot(document.getElementById('root')!).render(
       UI/UX Preview · ข้อมูลเดโมเก็บในเบราว์เซอร์นี้เท่านั้น · No live login, payments or
       broker sync
     </div>
-    {path === '/' ? (
+    {path === '/daily-preview' ? (
+      <DailyFlow />
+    ) : path === '/' ? (
       <Landing />
     ) : auth ? (
       <PreviewAuth />

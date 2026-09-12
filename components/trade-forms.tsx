@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
+import { ReviewFields, emptyReview } from './review-fields';
 import { Field, Pick, type Translate } from '@/components/workspace-ui';
 import {
   validateTrade,
@@ -64,7 +65,19 @@ export function TradeForm({
             value={v.playbook?.id || ''}
             onChange={(e) => {
               const p = playbooks.find((p) => p.id === e.target.value);
-              setV({ ...v, playbook: p ? { ...p } : undefined, adherence: '' });
+              const changed: Trade = {
+                ...v,
+                playbook: p ? { ...p } : undefined,
+                adherence: '',
+              };
+              setV({
+                ...changed,
+                review: {
+                  ...emptyReview(changed),
+                  emotion: v.review?.emotion || '',
+                  lesson: v.review?.lesson || '',
+                },
+              });
             }}
           >
             <option value="">{t('No plan selected', 'ยังไม่ระบุแผน')}</option>
@@ -323,6 +336,20 @@ export function TradeForm({
             ))}
           </div>
         </div>
+      </details>
+      <details className="review-evidence">
+        <summary>
+          {t(
+            'Checklist & short reflection (optional)',
+            'Checklist และบทเรียนสั้น ๆ (ไม่บังคับ)',
+          )}
+        </summary>
+        <ReviewFields
+          trade={v}
+          t={t}
+          disabled={busy || uploading}
+          onChange={setV}
+        />
       </details>
       {(error || serverError) && (
         <p role="alert" className="negative">

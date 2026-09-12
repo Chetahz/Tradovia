@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { net, money, type Trade } from '@/lib/domain';
+import { net, money, isTradeReviewed, type Trade } from '@/lib/domain';
 import { TradeTable, type Translate } from './workspace-ui';
 
 export default function DeepAnalysis({
@@ -43,15 +43,15 @@ export default function DeepAnalysis({
     ['yes', t('Followed', 'ตามแผน')],
     ['partial', t('Partly', 'บางส่วน')],
     ['no', t('Outside plan', 'นอกแผน')],
-    ['unknown', t('Unreviewed / no plan', 'ยังไม่ทบทวน / ไม่ระบุแผน')],
+    ['unknown', t('Unreviewed', 'ยังไม่ทบทวน')],
   ];
   const behavior = adherence.map(([key, label]) => ({
     key: `behavior:${key}`,
     label,
     rows: closed.filter((tr) =>
       key === 'unknown'
-        ? !tr.playbook || !tr.adherence
-        : Boolean(tr.playbook) && tr.adherence === key,
+        ? !isTradeReviewed(tr)
+        : isTradeReviewed(tr) && tr.adherence === key,
     ),
   }));
   const summarize = (rows: Trade[]) => {

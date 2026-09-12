@@ -1,6 +1,13 @@
 'use client';
-import { useState } from 'react';
-import { money, net, type Trade, type Playbook } from '@/lib/domain';
+import { useEffect, useRef, useState } from 'react';
+import {
+  money,
+  net,
+  isTradeReviewed,
+  type Trade,
+  type Playbook,
+} from '@/lib/domain';
+import { ReviewFields, ReviewEvidence, emptyReview } from './review-fields';
 import type { Translate } from './workspace-ui';
 
 export default function QuickReview({
@@ -9,23 +16,38 @@ export default function QuickReview({
   t,
   save,
   onView,
+  mode,
+  openRequest = 0,
 }: {
   trades: Trade[];
   plans: Playbook[];
   t: Translate;
   save: (trade: Trade) => Promise<boolean>;
   onView: (trade: Trade) => void;
+  mode: string;
+  openRequest?: number;
 }) {
-  const [open, setOpen] = useState(false),
+  const section = useRef<HTMLElement>(null);
+  const [open, setOpen] = useState(Boolean(openRequest)),
     [pendingOnly, setPendingOnly] = useState(true),
     [selected, setSelected] = useState(''),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [drafts, setDrafts] = useState<Record<string, Trade>>({}),
+    [saved, setSaved] = useState('');
+  useEffect(() => {
+    if (!openRequest) return;
+    setOpen(true);
+    const frame = requestAnimationFrame(() =>
+      section.current?.scrollIntoView({ block: 'start' }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [openRequest]);
   const closed = trades
     .filter((tr) => tr.status === 'CLOSED')
     .sort((a, b) =>
       (b.date + b.time + b.id).localeCompare(a.date + a.time + a.id),
     );
-  const pending = closed.filter((tr) => !tr.playbook || !tr.adherence);
+  const pending = closed.filter((tr) => !isTradeReviewed(tr));
   const queue = pendingOnly ? pending : closed;
   const current = queue.find((tr) => tr.id === selected) || queue[0];
   const next = () => {
@@ -33,7 +55,12 @@ export default function QuickReview({
     setSelected(queue[(index + 1) % queue.length]?.id || '');
   };
   return (
-    <section className="panel" style={{ marginBottom: 20 }}>
+    <section
+      id="quick-review"
+      ref={section}
+      className="panel quick-review-panel"
+      style={{ marginBottom: 20 }}
+    >
       <div className="section-heading">
         <div>
           <h2>{t('Quick review', 'ทบทวนด่วน')}</h2>
@@ -57,6 +84,11 @@ export default function QuickReview({
             : t('Start reviewing', 'เริ่มทบทวน')}
         </button>
       </div>
+      {saved && (
+        <p className="review-saved" role="status">
+          {saved}
+        </p>
+      )}
       {open && (
         <>
           <label className="daily-check">
@@ -89,8 +121,13 @@ export default function QuickReview({
               </label>
               <ReviewEntry
                 key={`${current.id}:${current.playbook?.version || 0}:${current.adherence || ''}`}
-                trade={current}
+                trade={drafts[current.id] || current}
                 plans={plans}
+                mode={mode}
+                onDraft={(value) =>
+                  setDrafts((prev) => ({ ...prev, [value.id]: value }))
+                }
+                onUploading={setBusy}
                 t={t}
                 busy={busy}
                 onView={() => onView(current)}
@@ -99,7 +136,20 @@ export default function QuickReview({
                   setBusy(true);
                   try {
                     const ok = await save(value);
-                    if (ok) next();
+                    if (ok) {
+                      setDrafts((prev) => {
+                        const remaining = { ...prev };
+                        delete remaining[value.id];
+                        return remaining;
+                      });
+                      setSaved(
+                        t(
+                          'Review saved. Ready for the next trade.',
+                          'บันทึกการทบทวนแล้ว พร้อมดูรายการถัดไป',
+                        ),
+                      );
+                      next();
+                    }
                     return ok;
                   } finally {
                     setBusy(false);
@@ -117,8 +167,8 @@ export default function QuickReview({
               <p className="journal-hint">
                 {closed.length
                   ? t(
-                      'Your reviews are available in Deep Analysis. No need to trade more to keep progress.',
-                      'ดูผลการทบทวนต่อได้ใน Deep Analysis ไม่จำเป็นต้องเทรดเพิ่มเพื่อรักษาความคืบหน้า',
+                      'Your reflections are saved. Take a break or revisit a trade whenever you like.',
+                      'บันทึกบทเรียนไว้แล้ว พักได้เลย หรือกลับมาดูรายการเดิมเมื่อพร้อม',
                     )
                   : t(
                       'Close a trade in your journal to start reviewing it here.',
@@ -140,6 +190,9 @@ function ReviewEntry({
   save,
   onSkip,
   onView,
+  mode,
+  onDraft,
+  onUploading,
 }: {
   trade: Trade;
   plans: Playbook[];
@@ -148,12 +201,13 @@ function ReviewEntry({
   save: (trade: Trade) => Promise<boolean>;
   onSkip: () => void;
   onView: () => void;
+  mode: string;
+  onDraft: (trade: Trade) => void;
+  onUploading: (busy: boolean) => void;
 }) {
-  const [plan, setPlan] = useState<Playbook | undefined>(trade.playbook),
-    [adherence, setAdherence] = useState<Trade['adherence']>(
-      trade.adherence || '',
-    ),
-    [error, setError] = useState('');
+  const [error, setError] = useState('');
+  const plan = trade.playbook,
+    adherence = trade.adherence || '';
   return (
     <div className="daily-card">
       <div className="section-heading">
@@ -174,17 +228,31 @@ function ReviewEntry({
         {t('Net result after fees', 'ผลสุทธิหลังหักค่าธรรมเนียม')}
       </p>
       <label className="daily-field">
-        Playbook
+        {t('1. Which plan did you use?', '1. เทรดนี้ใช้แผนไหน?')}
         <select
           disabled={busy}
-          value={plan?.id || ''}
+          value={plan?.id || (adherence === 'no' ? '__none' : '')}
           onChange={(e) => {
-            setPlan(plans.find((p) => p.id === e.target.value));
-            setAdherence('');
+            const value: Trade = {
+              ...trade,
+              playbook: plans.find((p) => p.id === e.target.value),
+              adherence: e.target.value === '__none' ? 'no' : '',
+            };
+            onDraft({
+              ...value,
+              review: {
+                ...emptyReview(value),
+                emotion: trade.review?.emotion || '',
+                lesson: trade.review?.lesson || '',
+              },
+            });
             setError('');
           }}
         >
           <option value="">{t('Choose a plan', 'เลือกแผน')}</option>
+          <option value="__none">
+            {t('I traded without a plan', 'เทรดนี้ไม่ได้ใช้แผน')}
+          </option>
           {plan && (
             <option value={plan.id}>
               {plan.name} · v{plan.version}{' '}
@@ -203,8 +271,8 @@ function ReviewEntry({
       {!plans.some((p) => !p.archived) && !plan && (
         <p>
           {t(
-            'Create a Playbook first using the Playbook menu. You can skip this trade for now.',
-            'สร้างแผนจากเมนูแผนการเทรดก่อน คุณข้ามรายการนี้ไว้ก่อนได้',
+            'Create a plan in Playbook, or record that you traded without a plan.',
+            'สร้างแผนจากเมนูแผนการเทรด หรือระบุว่าเทรดนี้ไม่ได้ใช้แผน',
           )}
         </p>
       )}
@@ -218,14 +286,17 @@ function ReviewEntry({
           </p>
         </details>
       )}
-      <h3>{t('Did you follow the plan?', 'ทำตามแผนหรือไม่?')}</h3>
+      <ReviewFields trade={trade} t={t} disabled={busy} onChange={onDraft} />
+      <h3>
+        {t('2. Overall, did you follow the plan?', '2. โดยรวมทำตามแผนหรือไม่?')}
+      </h3>
       <div className="daily-options">
         {(['yes', 'partial', 'no'] as const).map((value, i) => (
           <button
             disabled={busy || !plan}
             key={value}
             aria-pressed={adherence === value}
-            onClick={() => setAdherence(value)}
+            onClick={() => onDraft({ ...trade, adherence: value })}
           >
             {
               [
@@ -237,21 +308,47 @@ function ReviewEntry({
           </button>
         ))}
       </div>
+      {!plan && adherence === 'no' && (
+        <p className="journal-hint">
+          {t(
+            'Recorded as a trade without a plan. You can still reflect and learn from it.',
+            'บันทึกว่าเทรดโดยไม่มีแผน คุณยังทบทวนและเรียนรู้จากเทรดนี้ได้',
+          )}
+        </p>
+      )}
+      <ReviewEvidence
+        trade={trade}
+        mode={mode}
+        t={t}
+        disabled={busy}
+        onChange={onDraft}
+        onUploading={onUploading}
+      />
       <p className="journal-hint">
         {t(
-          'Only plan and review fields change. Execution, notes and images stay as recorded. Skipping does not mark a trade reviewed.',
-          'บันทึกเฉพาะแผนและผลทบทวน ข้อมูลซื้อขาย บันทึก และภาพยังคงเดิม การข้ามไม่นับว่าทบทวนแล้ว',
+          'Execution is already recorded. Skipping does not mark a trade reviewed. Unsaved answers stay while you remain on this journal page.',
+          'ข้อมูลซื้อขายบันทึกไว้แล้ว การข้ามไม่นับว่าทบทวนแล้ว คำตอบที่ยังไม่บันทึกจะอยู่ระหว่างที่คุณอยู่ในหน้าบันทึกนี้',
         )}
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="actions" style={{ flexWrap: 'wrap' }}>
         <button
-          disabled={busy || !plan || !adherence}
+          disabled={busy || !adherence}
           className="button ink"
           onClick={async () => {
             setError('');
             try {
-              if (!(await save({ ...trade, playbook: plan, adherence })))
+              if (
+                !(await save({
+                  ...trade,
+                  playbook: plan,
+                  adherence,
+                  review: {
+                    ...(trade.review || emptyReview(trade)),
+                    completedAt: new Date().toISOString(),
+                  },
+                }))
+              )
                 setError(
                   t(
                     'Could not save. Your choices are still here; please retry.',

@@ -12,6 +12,13 @@ export type Playbook = {
 export type Trade = {
   playbook?: Playbook;
   adherence?: 'yes' | 'partial' | 'no' | '';
+  review?: {
+    checklist: { text: string; answer: 'yes' | 'no' | 'na' | '' }[];
+    emotion: '' | 'calm' | 'confident' | 'anxious' | 'fomo' | 'frustrated';
+    lesson: string;
+    completedAt?: string;
+  };
+  imageStages?: Record<string, 'before' | 'after' | 'other'>;
   id: string;
   accountId: string;
   symbol: string;
@@ -93,6 +100,17 @@ export const money = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n);
 export const net = (t: Trade) => Math.round((t.gross - t.fees) * 100) / 100;
+export const isTradeReviewed = (t: Trade) =>
+  t.status === 'CLOSED' &&
+  Boolean(t.review?.completedAt || (t.playbook && t.adherence));
+export const planChecklist = (
+  p?: Playbook,
+): NonNullable<Trade['review']>['checklist'] =>
+  (p?.checklist || '')
+    .split(/\r?\n/)
+    .map((text) => text.trim())
+    .filter(Boolean)
+    .map((text) => ({ text, answer: '' }));
 export const dateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export function statistics(trades: Trade[], capital: number) {
@@ -364,7 +382,71 @@ export function validateTrade(value: unknown): Trade {
     finite(ref.swap, 'swap');
     importRef = { ...ref };
   }
+  if (t.playbook) {
+    const p = t.playbook;
+    if (
+      typeof p.id !== 'string' ||
+      !p.id ||
+      !Number.isInteger(p.version) ||
+      p.version < 1 ||
+      ['name', 'technique', 'entry', 'exit', 'risk', 'checklist'].some(
+        (key) =>
+          typeof p[key as keyof Playbook] !== 'string' ||
+          String(p[key as keyof Playbook]).length > 4000,
+      )
+    )
+      throw new Error('Invalid playbook snapshot');
+  }
+  if (
+    t.adherence !== undefined &&
+    !['', 'yes', 'partial', 'no'].includes(t.adherence)
+  )
+    throw new Error('Invalid plan adherence');
+  if (t.review) {
+    const r = t.review;
+    const expected = planChecklist(t.playbook);
+    if (
+      !Array.isArray(r.checklist) ||
+      r.checklist.length !== expected.length ||
+      r.checklist.some(
+        (item, i) =>
+          !item ||
+          item.text !== expected[i].text ||
+          !['', 'yes', 'no', 'na'].includes(item.answer),
+      ) ||
+      !['', 'calm', 'confident', 'anxious', 'fomo', 'frustrated'].includes(
+        r.emotion,
+      ) ||
+      typeof r.lesson !== 'string' ||
+      r.lesson.length > 2000 ||
+      (r.completedAt !== undefined &&
+        (typeof r.completedAt !== 'string' ||
+          !Number.isFinite(Date.parse(r.completedAt)) ||
+          !t.adherence))
+    )
+      throw new Error('Invalid trade review');
+  }
+  const imageStages: Trade['imageStages'] = {};
+  if (t.imageStages) {
+    for (const id of t.imageIds) {
+      const stage = t.imageStages[id];
+      if (stage !== undefined && !['before', 'after', 'other'].includes(stage))
+        throw new Error('Invalid image stage');
+      if (stage) imageStages[id] = stage;
+    }
+  }
   return {
+    ...(t.playbook ? { playbook: { ...t.playbook } } : {}),
+    ...(t.adherence !== undefined ? { adherence: t.adherence } : {}),
+    ...(t.review
+      ? {
+          review: {
+            ...t.review,
+            checklist: t.review.checklist.map((item) => ({ ...item })),
+          },
+        }
+      : {}),
+    ...(t.imageStages ? { imageStages } : {}),
     id: t.id,
     accountId: t.accountId,
     symbol: t.symbol,

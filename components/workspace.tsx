@@ -61,6 +61,7 @@ import {
   money,
   dateKey,
   inPeriod,
+  isTradeReviewed,
   type Trade,
   type WorkspaceData,
   type Goal,
@@ -78,6 +79,7 @@ import { TradeForm, SimpleForm } from './trade-forms';
 import { TradingCalendar, RiskCalculator } from './trading-tools';
 import Market from './market';
 import QuickReview from './quick-review';
+import { ReviewSummary } from './review-fields';
 import CsvImport from './csv-import';
 import DeepAnalysis from './deep-analysis';
 import Playbooks from './playbooks';
@@ -121,6 +123,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   const t: Translate = (en, thai) => (th ? thai : en);
   const endpoint = `/api/workspace?mode=${mode}`;
   const [analysisTab, setAnalysisTab] = useState('summary');
+  const [reviewRequested, setReviewRequested] = useState(0);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const reload = useCallback(async () => {
     setError('');
@@ -555,6 +558,38 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
           />
           {page === 'overview' && (
             <>
+              <section className="panel review-focus">
+                <div>
+                  <span className="overline">
+                    {t('YOUR NEXT SMALL STEP', 'ก้าวเล็ก ๆ ถัดไปของคุณ')}
+                  </span>
+                  <h2>
+                    {trades.some(
+                      (tr) => tr.status === 'CLOSED' && !isTradeReviewed(tr),
+                    )
+                      ? t(
+                          `${trades.filter((tr) => tr.status === 'CLOSED' && !isTradeReviewed(tr)).length} trades ready to reflect on`,
+                          `มี ${trades.filter((tr) => tr.status === 'CLOSED' && !isTradeReviewed(tr)).length} เทรดรอทบทวน`,
+                        )
+                      : t('Your review queue is clear', 'ไม่มีเทรดค้างทบทวน')}
+                  </h2>
+                  <p className="journal-hint">
+                    {t(
+                      'Choose a plan, reflect on your rules, and keep one lesson for next time.',
+                      'เลือกแผน ทบทวนกฎ และเก็บหนึ่งบทเรียนไว้ใช้ครั้งหน้า',
+                    )}
+                  </p>
+                </div>
+                <button
+                  className="button ink compact"
+                  onClick={() => {
+                    setReviewRequested((request) => request + 1);
+                    navigate('journal');
+                  }}
+                >
+                  {t('Review trades', 'ทบทวนเทรด')} <ArrowRight size={16} />
+                </button>
+              </section>
               <div className="metrics-grid">
                 <Metric
                   label={t('Net P&L', 'กำไร / ขาดทุนสุทธิ')}
@@ -650,6 +685,8 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               trades={trades}
               plans={data.playbooks || []}
               t={t}
+              mode={mode}
+              openRequest={reviewRequested}
               save={(tr) => mutate('saveTrade', tr)}
               onView={setDetail}
             />
@@ -683,7 +720,11 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   accounts={selectedAccounts}
                   trades={data.trades}
                   t={t}
-                  save={(trades) => mutate('saveTrades', trades)}
+                  save={async (trades) => {
+                    const ok = await mutate('saveTrades', trades);
+                    if (ok) setReviewRequested((request) => request + 1);
+                    return ok;
+                  }}
                 />
                 <button
                   className="button ghost compact"
@@ -1106,6 +1147,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                 )}
                 {detail.notes || t('No notes yet.', 'ยังไม่มีบันทึก')}
               </p>
+              <ReviewSummary trade={detail} t={t} />
               <h3 className="journal-section-title">
                 {t('Chart evidence', 'ภาพกราฟประกอบ')}
               </h3>
@@ -1128,7 +1170,14 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                         src={`/api/images/${id}?mode=${mode}`}
                         alt={t('Trade screenshot', 'ภาพกราฟการเทรด')}
                       />
-                      <span>{t('Expand image', 'ขยายภาพ')}</span>
+                      <span>
+                        {detail.imageStages?.[id] === 'before'
+                          ? t('Before entry', 'ก่อนเข้าเทรด')
+                          : detail.imageStages?.[id] === 'after'
+                            ? t('After exit', 'หลังจบเทรด')
+                            : t('Chart', 'ภาพกราฟ')}{' '}
+                        · {t('Expand image', 'ขยายภาพ')}
+                      </span>
                     </summary>
                     <Image
                       unoptimized

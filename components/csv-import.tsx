@@ -7,6 +7,7 @@ import {
   type CsvRow,
 } from '@/lib/trade-csv';
 import { money, net, type Account, type Trade } from '@/lib/domain';
+import { previewMt5Html, previewMt5Xlsx } from '@/lib/mt5-report';
 import type { Translate } from './workspace-ui';
 import { Upload } from 'lucide-react';
 import {
@@ -26,7 +27,7 @@ export default function CsvImport({
   accounts: Account[];
   trades: Trade[];
   t: Translate;
-  save: (trade: Trade) => Promise<boolean>;
+  save: (trades: Trade[]) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false),
     [account, setAccount] = useState(accounts[0]?.id || '');
@@ -84,25 +85,16 @@ export default function CsvImport({
     lock.current = true;
     setBusy(true);
     setError('');
-    let count = 0;
     try {
-      for (const row of selected) {
-        if (!(await save(row.trade!)))
-          throw Error(
-            t(
-              'Import stopped. Saved rows remain; retry the remaining rows.',
-              'หยุดนำเข้าแล้ว รายการที่บันทึกสำเร็จยังอยู่ ลองนำเข้ารายการที่เหลือได้',
-            ),
-          );
-        count++;
-        setExcluded((previous) => new Set([...previous, row.row]));
-        setMessage(
+      const count = selected.length;
+      if (!(await save(selected.map((row) => row.trade!))))
+        throw Error(
           t(
-            `Saved ${count} of ${selected.length}`,
-            `บันทึกแล้ว ${count} จาก ${selected.length} รายการ`,
+            'Import failed. No rows were added.',
+            'นำเข้าไม่สำเร็จ ยังไม่มีรายการถูกเพิ่ม',
           ),
         );
-      }
+      setExcluded(new Set(selected.map((row) => row.row)));
       setMessage(
         t(
           `Imported ${count} trades. Review their Playbooks in Quick review below.`,
@@ -125,21 +117,21 @@ export default function CsvImport({
     >
       <DialogTrigger className="button ghost compact">
         <Upload size={16} />
-        {t('Import CSV', 'นำเข้า CSV')}
+        {t('Import trades', 'นำเข้ารายการ')}
       </DialogTrigger>
       <DialogContent className="trade-dialog csv-import">
         <DialogTitle>{t('Import trades', 'นำเข้าการเทรด')}</DialogTitle>
         <DialogDescription>
           {t(
-            'Choose an account, preview your CSV, then confirm the trades to import.',
-            'เลือกบัญชี ตรวจไฟล์ CSV แล้วค่อยยืนยันรายการที่ต้องการนำเข้า',
+            'Choose an account, preview your MT5 report or Tradovia CSV, then confirm the trades.',
+            'เลือกบัญชี ตรวจรายงาน MT5 หรือ CSV ของ Tradovia แล้วค่อยยืนยันรายการ',
           )}
         </DialogDescription>
         <div className="mt-6">
           <p className="journal-hint">
             {t(
-              'This version accepts the Tradovia CSV template, not raw MT5 reports. Up to 500 trades / 2 MB. Amounts are USD; dates and times are used as written without timezone conversion.',
-              'เวอร์ชันนี้รับแม่แบบ CSV ของ Tradovia ยังไม่รับรายงาน MT5 โดยตรง สูงสุด 500 รายการ / 2 MB จำนวนเงินเป็น USD วันที่และเวลาใช้ตามไฟล์โดยไม่แปลงเขตเวลา',
+              'Accepts MT5 account history (.xlsx or .html) and the Tradovia CSV template. MT5 imports closed Positions only, including commission and swap. Up to 500 trades / 5 MB. Times are used as shown in the report.',
+              'รองรับประวัติบัญชี MT5 (.xlsx หรือ .html) และแม่แบบ CSV ของ Tradovia โดยนำเข้าเฉพาะ Positions ที่ปิดแล้ว พร้อม Commission และ Swap สูงสุด 500 รายการ / 5 MB และใช้เวลาตามที่แสดงในรายงาน',
             )}
           </p>
           <fieldset
@@ -172,25 +164,49 @@ export default function CsvImport({
                 </select>
               </label>
               <label className="form-field">
-                <span>{t('CSV file (UTF-8)', 'ไฟล์ CSV (UTF-8)')}</span>
+                <span>{t('MT5 report or CSV', 'รายงาน MT5 หรือ CSV')}</span>
                 <input
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".xlsx,.html,.htm,.csv,text/csv,text/html,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     e.target.value = '';
                     if (!file) return;
-                    if (file.size > 2 * 1024 * 1024) {
+                    if (file.size > 5 * 1024 * 1024) {
                       reset();
-                      setError(t('Maximum 2 MB', 'ขนาดสูงสุด 2 MB'));
+                      setError(t('Maximum 5 MB', 'ขนาดสูงสุด 5 MB'));
                       return;
                     }
                     setBusy(true);
                     try {
-                      preview(await file.text(), file.name);
-                    } catch {
                       reset();
-                      setError(t('Unable to read file', 'อ่านไฟล์ไม่ได้'));
+                      setFilename(file.name);
+                      const extension = file.name
+                        .toLowerCase()
+                        .split('.')
+                        .pop();
+                      if (extension === 'xlsx')
+                        setRows(
+                          previewMt5Xlsx(await file.arrayBuffer(), accountId),
+                        );
+                      else if (extension === 'html' || extension === 'htm')
+                        setRows(previewMt5Html(await file.text(), accountId));
+                      else if (extension === 'csv')
+                        setRows(previewCsv(await file.text(), accountId));
+                      else
+                        throw Error(
+                          t(
+                            'Use .xlsx, .html or .csv',
+                            'ใช้ไฟล์ .xlsx, .html หรือ .csv',
+                          ),
+                        );
+                    } catch (error) {
+                      reset();
+                      setError(
+                        error instanceof Error
+                          ? error.message
+                          : t('Unable to read file', 'อ่านไฟล์ไม่ได้'),
+                      );
                     } finally {
                       setBusy(false);
                     }
@@ -236,11 +252,7 @@ export default function CsvImport({
               {error}
             </p>
           )}
-          {message && (
-            <p role="status" className="notice">
-              {message}
-            </p>
-          )}
+          {message && <output className="notice">{message}</output>}
           {!!rows.length && (
             <>
               <p className="journal-hint">
@@ -252,8 +264,8 @@ export default function CsvImport({
               </p>
               <p className="muted-copy">
                 {t(
-                  'Duplicates match account, symbol, direction, status, date/time, entry, size and result. No existing trades are overwritten. Review each row for its full details.',
-                  'ตรวจซ้ำจากบัญชี สินทรัพย์ ทิศทาง สถานะ วันเวลา ราคาเข้า ขนาด และผลลัพธ์ ไม่เขียนทับรายการเดิม เปิดรายละเอียดแต่ละแถวเพื่อตรวจได้',
+                  'MT5 duplicates match the destination account and Position ID. CSV duplicates match the trade details. Existing trades are never overwritten.',
+                  'รายการ MT5 ตรวจซ้ำจากบัญชีปลายทางและ Position ID ส่วน CSV ตรวจจากรายละเอียดการเทรด โดยไม่เขียนทับรายการเดิม',
                 )}
               </p>
               <div className="csv-preview-table">
@@ -306,6 +318,16 @@ export default function CsvImport({
                                 Gross {money(r.trade.gross)} · Fees{' '}
                                 {money(r.trade.fees)} · Risk{' '}
                                 {money(r.trade.risk)}
+                                {r.trade.importRef && (
+                                  <>
+                                    <br />
+                                    MT5 #{r.trade.importRef.positionId} · Close{' '}
+                                    {r.trade.importRef.closeDate}{' '}
+                                    {r.trade.importRef.closeTime} @{' '}
+                                    {r.trade.importRef.closePrice} · Swap{' '}
+                                    {money(r.trade.importRef.swap)}
+                                  </>
+                                )}
                                 <br />
                                 {r.trade.setup}
                                 <br />

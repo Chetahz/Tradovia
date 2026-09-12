@@ -683,7 +683,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   accounts={selectedAccounts}
                   trades={data.trades}
                   t={t}
-                  save={(trade) => mutate('saveTrade', trade)}
+                  save={(trades) => mutate('saveTrades', trades)}
                 />
                 <button
                   className="button ghost compact"

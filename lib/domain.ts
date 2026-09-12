@@ -29,6 +29,18 @@ export type Trade = {
   setup: string;
   notes: string;
   imageIds: string[];
+  importRef?: {
+    format: 'MT5';
+    positionId: string;
+    brokerSymbol: string;
+    closeDate: string;
+    closeTime: string;
+    closePrice: number;
+    reportedSl: number;
+    reportedTp: number;
+    commission: number;
+    swap: number;
+  };
 };
 export type Portfolio = {
   id: string;
@@ -331,6 +343,27 @@ export function validateTrade(value: unknown): Trade {
     )
   )
     throw new Error('Invalid notes, technique tags or images');
+  let importRef: Trade['importRef'];
+  if (t.importRef !== undefined) {
+    const ref = t.importRef;
+    if (
+      !ref ||
+      ref.format !== 'MT5' ||
+      typeof ref.positionId !== 'string' ||
+      !/^[a-zA-Z0-9_-]{1,80}$/.test(ref.positionId) ||
+      typeof ref.brokerSymbol !== 'string' ||
+      !/^[A-Z0-9.:/_-]{1,24}$/.test(ref.brokerSymbol) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(ref.closeDate) ||
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(ref.closeTime)
+    )
+      throw new Error('Invalid import reference');
+    finite(ref.closePrice, 'close price', 0);
+    finite(ref.reportedSl, 'reported stop loss', 0);
+    finite(ref.reportedTp, 'reported target', 0);
+    finite(ref.commission, 'commission');
+    finite(ref.swap, 'swap');
+    importRef = { ...ref };
+  }
   return {
     id: t.id,
     accountId: t.accountId,
@@ -349,6 +382,7 @@ export function validateTrade(value: unknown): Trade {
     notes: t.notes,
     setup: t.setup,
     imageIds: t.imageIds,
+    ...(importRef ? { importRef } : {}),
   };
 }
 export function demoData(now = new Date()): WorkspaceData {

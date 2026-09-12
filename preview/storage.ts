@@ -166,7 +166,9 @@ export function installPreviewTransport() {
             const existing = d.trades.find((t) => t.id === trade.id);
             if (v.playbook) {
               const snapshot =
-                existing && existing.playbook && existing.playbook.id === v.playbook.id &&
+                existing &&
+                existing.playbook &&
+                existing.playbook.id === v.playbook.id &&
                 existing.playbook.version === v.playbook.version
                   ? existing.playbook
                   : d.playbooks?.find(
@@ -180,6 +182,20 @@ export function installPreviewTransport() {
             if (!d.accounts.some((a) => a.id === trade.accountId))
               throw Error('Account not found');
             upsert(d.trades, trade);
+            break;
+          }
+          case 'saveTrades': {
+            if (!Array.isArray(v) || !v.length || v.length > 500)
+              throw Error('Import must contain 1–500 trades');
+            if (d.trades.length + v.length > 5000)
+              throw Error('Trade limit reached');
+            const imported = v.map(validateTrade);
+            const accountIds = new Set(d.accounts.map((account) => account.id));
+            if (imported.some((trade) => trade.imageIds.length))
+              throw Error('Imported trades cannot include images');
+            if (imported.some((trade) => !accountIds.has(trade.accountId)))
+              throw Error('Account not found');
+            for (const trade of imported) upsert(d.trades, trade);
             break;
           }
           case 'deleteTrade':

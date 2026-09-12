@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const who = await owner(request);
     await initialize(who.id, who.mode);
     const text = new TextDecoder().decode(
-      await readBoundedBody(request, 30000),
+      await readBoundedBody(request, 2000000),
     );
     const body = JSON.parse(text);
     const db = database();
@@ -54,6 +54,35 @@ export async function POST(request: Request) {
           JSON.stringify(t),
         )
         .run();
+    } else if (body.action === 'saveTrades') {
+      if (!Array.isArray(v) || !v.length || v.length > 500)
+        throw new ApiError(400, 'Import must contain 1–500 trades');
+      const imported = v.map(validateTrade);
+      if (d.trades.length + imported.length > 5000)
+        throw new ApiError(409, 'Trade limit reached');
+      if (
+        imported.some(
+          (trade) =>
+            trade.imageIds.length ||
+            !d.accounts.some((account) => account.id === trade.accountId),
+        )
+      )
+        throw new ApiError(403, 'Invalid imported trade account or images');
+      await db.batch(
+        imported.map((trade) =>
+          db
+            .prepare(
+              'INSERT INTO trades(id,owner_id,account_id,trade_date,payload) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id,trade_date=excluded.trade_date,payload=excluded.payload WHERE trades.owner_id=excluded.owner_id',
+            )
+            .bind(
+              prefix + trade.id,
+              who.id,
+              prefix + trade.accountId,
+              trade.date,
+              JSON.stringify(trade),
+            ),
+        ),
+      );
     } else if (body.action === 'deleteTrade') {
       if (typeof v !== 'string') throw new Error('Invalid trade');
       await db

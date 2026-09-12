@@ -53,6 +53,8 @@ export function parseCsv(text: string): string[][] {
 }
 
 export function tradeFingerprint(t: Trade) {
+  if (t.importRef?.format === 'MT5')
+    return JSON.stringify([t.accountId, 'MT5', t.importRef.positionId]);
   return JSON.stringify([
     t.accountId,
     t.symbol,

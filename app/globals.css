@@ -1543,10 +1543,9 @@ button:disabled {
 .calendar-summary strong {
   font-size: 19px;
 }
-.calendar-weekdays,
-.calendar-grid {
+.calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(126px, 0.85fr);
 }
 .calendar-weekdays span {
   padding: 12px;
@@ -1554,7 +1553,13 @@ button:disabled {
   font-size: 11px;
   color: var(--muted-foreground);
 }
-.calendar-grid {
+.calendar-weeks {
+  display: grid;
+  gap: 5px;
+}
+.calendar-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(126px, 0.85fr);
   gap: 5px;
 }
 .calendar-day {
@@ -1594,6 +1599,43 @@ button:disabled {
 }
 .calendar-day.today {
   outline: 1px solid var(--ring);
+}
+.weekly-result {
+  min-width: 0;
+  min-height: 103px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  background: color-mix(in srgb, var(--muted) 55%, var(--card));
+  font-variant-numeric: tabular-nums;
+}
+.weekly-result small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.weekly-result strong {
+  font-size: 14px;
+  line-height: 1.2;
+}
+.weekly-result span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.weekly-result.positive-week {
+  border-color: color-mix(in srgb, var(--positive) 24%, var(--border));
+}
+.weekly-result.positive-week strong {
+  color: var(--positive);
+}
+.weekly-result.negative-week {
+  border-color: color-mix(in srgb, var(--negative) 24%, var(--border));
+}
+.weekly-result.negative-week strong {
+  color: var(--negative);
 }
 .year-grid {
   display: grid;
@@ -2318,8 +2360,36 @@ button:disabled {
     border-radius: 6px;
     font-size: 10px;
   }
-  .calendar-grid {
+  .calendar-weeks {
     gap: 3px;
+  }
+  .calendar-weekdays,
+  .calendar-week-row {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .weekly-heading {
+    display: none;
+  }
+  .weekly-result {
+    grid-column: 1 / -1;
+    min-height: 0;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 3px;
+  }
+  .weekly-result small {
+    grid-column: 1;
+  }
+  .weekly-result strong {
+    grid-column: 1;
+    font-size: 13px;
+  }
+  .weekly-result span {
+    grid-row: 1 / span 2;
+    align-self: center;
   }
   .calendar-day strong {
     font-size: 9px;

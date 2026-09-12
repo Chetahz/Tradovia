@@ -20,6 +20,7 @@ import {
   assets,
   sizePosition,
   money,
+  net,
   type Trade,
   type RiskInput,
 } from '@/lib/domain';
@@ -57,6 +58,9 @@ export function TradingCalendar({
     d.setDate(d.getDate() + i);
     return d;
   });
+  const weeks = Array.from({ length: days.length / 7 }, (_, index) =>
+    days.slice(index * 7, index * 7 + 7),
+  );
   const current = trades.filter(
     (x) =>
       x.status === 'CLOSED' &&
@@ -183,30 +187,68 @@ export function TradingCalendar({
                 {t(s, ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][i])}
               </span>
             ))}
+            <span className="weekly-heading">
+              {t('Week result', 'สรุปสัปดาห์')}
+            </span>
           </div>
-          <div
-            className={`calendar-grid ${view === 'week' ? 'week-view' : ''}`}
-          >
-            {days.map((d) => {
-              const key = dateKey(d),
-                v = daily[key];
+          <div className="calendar-weeks">
+            {weeks.map((week) => {
+              const keys = new Set(week.map(dateKey));
+              const weekTrades = trades.filter(
+                (trade) => trade.status === 'CLOSED' && keys.has(trade.date),
+              );
+              const weekPnl = weekTrades.reduce(
+                (sum, trade) => sum + net(trade),
+                0,
+              );
+              const wins = weekTrades.filter((trade) => net(trade) > 0).length;
+              const complete = dateKey(week[6]) < dateKey(new Date());
               return (
-                <button
-                  key={key}
-                  className={`calendar-day ${d.getMonth() !== m && view === 'month' ? 'outside' : ''} ${v ? (v.pnl >= 0 ? 'win-day' : 'loss-day') : ''} ${key === dateKey(new Date()) ? 'today' : ''}`}
-                  aria-label={`${key}, ${v?.count ?? 0} trades, ${money(v?.pnl ?? 0)}`}
-                  onClick={() => setDay(key)}
+                <div
+                  className={`calendar-week-row ${view === 'week' ? 'week-view' : ''}`}
+                  key={dateKey(week[0])}
                 >
-                  <span>{d.getDate()}</span>
-                  {v && (
-                    <>
-                      <strong>{money(v.pnl)}</strong>
-                      <small>
-                        {v.count} {t('trades', 'ไม้')}
-                      </small>
-                    </>
-                  )}
-                </button>
+                  {week.map((d) => {
+                    const key = dateKey(d),
+                      v = daily[key];
+                    return (
+                      <button
+                        key={key}
+                        className={`calendar-day ${d.getMonth() !== m && view === 'month' ? 'outside' : ''} ${v ? (v.pnl >= 0 ? 'win-day' : 'loss-day') : ''} ${key === dateKey(new Date()) ? 'today' : ''}`}
+                        aria-label={`${key}, ${v?.count ?? 0} trades, ${money(v?.pnl ?? 0)}`}
+                        onClick={() => setDay(key)}
+                      >
+                        <span>{d.getDate()}</span>
+                        {v && (
+                          <>
+                            <strong>{money(v.pnl)}</strong>
+                            <small>
+                              {v.count} {t('trades', 'ไม้')}
+                            </small>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                  <div
+                    className={`weekly-result ${weekPnl > 0 ? 'positive-week' : weekPnl < 0 ? 'negative-week' : ''}`}
+                  >
+                    <small>
+                      {complete
+                        ? t('Week closed', 'ปิดสัปดาห์')
+                        : t('In progress', 'กำลังดำเนินอยู่')}
+                    </small>
+                    <strong>{money(weekPnl)}</strong>
+                    <span>
+                      {weekTrades.length} {t('trades', 'ไม้')}
+                    </span>
+                    <span>
+                      {weekTrades.length
+                        ? `${Math.round((wins / weekTrades.length) * 100)}% ${t('win', 'ชนะ')}`
+                        : `— ${t('win', 'ชนะ')}`}
+                    </span>
+                  </div>
+                </div>
               );
             })}
           </div>

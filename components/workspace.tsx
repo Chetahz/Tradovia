@@ -116,6 +116,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
     [status, setStatus] = useState('all'),
     [edit, setEdit] = useState<Trade | null>(null),
     [detail, setDetail] = useState<Trade | null>(null),
+    [justSaved, setJustSaved] = useState(false),
     [review, setReview] = useState<{
       label: string;
       field?: 'setup' | 'symbol';
@@ -1118,7 +1119,12 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               busy={busy}
               serverError={error}
               onSave={async (tr) => {
-                if (await mutate('saveTrade', tr)) setEdit(null);
+                if (await mutate('saveTrade', tr)) {
+                  setEdit(null);
+                  navigate('journal');
+                  setJustSaved(true);
+                  setDetail(tr);
+                }
               }}
               onImport={() => {
                 setEdit(null);
@@ -1158,18 +1164,47 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       <Dialog
         open={!!detail}
         onOpenChange={(open) => {
-          if (!open) setDetail(null);
+          if (!open) {
+            setDetail(null);
+            setJustSaved(false);
+          }
         }}
       >
-        <DialogContent className="trade-dialog">
-          <DialogTitle>
-            {detail?.symbol} · {detail?.side}
-          </DialogTitle>
-          <DialogDescription>
-            {detail?.date} · {detail?.time} · {detail?.setup}
-          </DialogDescription>
+        <DialogContent className="trade-dialog trade-detail-dialog">
+          <div className="trade-detail-header">
+            <div>
+              <DialogTitle>
+                {detail?.symbol} · {detail?.side}
+              </DialogTitle>
+              <DialogDescription>
+                {detail?.date} · {detail?.time}
+                {detail?.setup ? ` · ${detail.setup}` : ''}
+              </DialogDescription>
+            </div>
+            {detail && (
+              <span
+                className={`trade-status-pill ${detail.status.toLowerCase()}`}
+              >
+                {detail.status === 'OPEN'
+                  ? t('Open', 'ยังไม่ปิด')
+                  : t('Closed', 'ปิดแล้ว')}
+              </span>
+            )}
+          </div>
           {detail && (
             <>
+              {justSaved && (
+                <output className="trade-saved-confirmation">
+                  <Check size={18} />
+                  <span>
+                    <b>{t('Trade saved', 'บันทึกการเทรดแล้ว')}</b>
+                    {t(
+                      'Calendar, Quick Review and Analytics are now updated.',
+                      'Calendar, Quick Review และ Analytics อัปเดตแล้ว',
+                    )}
+                  </span>
+                </output>
+              )}
               <div className="detail-pnl">
                 <span>{t('Net result', 'ผลลัพธ์สุทธิ')}</span>
                 <strong className={net(detail) >= 0 ? 'positive' : 'negative'}>
@@ -1258,12 +1293,13 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                 </p>
               )}
               <ChartImages trade={detail} mode={mode} t={t} />
-              <div className="actions">
+              <div className="actions trade-detail-actions">
                 <button
                   className="button ink"
                   onClick={() => {
                     setEdit(detail);
                     setDetail(null);
+                    setJustSaved(false);
                   }}
                 >
                   <Pencil size={16} />
@@ -1274,6 +1310,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   onClick={() => {
                     setConfirm(detail.id);
                     setDetail(null);
+                    setJustSaved(false);
                   }}
                 >
                   <Trash2 size={16} />

@@ -86,6 +86,26 @@ export default function ChartImages({ trade, mode, t }: Props) {
                 <X size={22} />
               </button>
             </div>
+            {trade.imageIds.length > 1 && (
+              <div
+                className="chart-lightbox-tabs"
+                role="tablist"
+                aria-label={t('Chart images', 'ภาพกราฟ')}
+              >
+                {trade.imageIds.map((id, index) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    key={id}
+                    aria-selected={selected === index}
+                    onClick={() => setSelected(index)}
+                  >
+                    {label(id)}
+                    <small>{index + 1}</small>
+                  </button>
+                ))}
+              </div>
+            )}
             <ZoomableChart
               key={trade.imageIds[selected]}
               id={trade.imageIds[selected]}

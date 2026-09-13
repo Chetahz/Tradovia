@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import ChartImages from './chart-images';
+import TradeGallery from './trade-gallery';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard,
@@ -123,6 +124,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   const t: Translate = (en, thai) => (th ? thai : en);
   const endpoint = `/api/workspace?mode=${mode}`;
   const [analysisTab, setAnalysisTab] = useState('summary');
+  const [journalView, setJournalView] = useState('table');
   const [reviewRequested, setReviewRequested] = useState(0);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const reload = useCallback(async () => {
@@ -340,6 +342,13 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   const title = pages.find((p) => p[0] === page);
   const sorted = [...trades].sort((a, b) =>
     (b.date + b.time).localeCompare(a.date + a.time),
+  );
+  const journalTrades = sorted.filter(
+    (tr) =>
+      (status === 'all' || tr.status === status) &&
+      `${tr.symbol} ${tr.setup} ${tr.notes}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
   if (!data)
     return (
@@ -693,6 +702,24 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
           )}
           {page === 'journal' && (
             <div className="panel">
+              <div
+                className="daily-options gallery-view-switch"
+                role="group"
+                aria-label={t('Journal view', 'มุมมองบันทึกการเทรด')}
+              >
+                <button
+                  aria-pressed={journalView === 'table'}
+                  onClick={() => setJournalView('table')}
+                >
+                  {t('Table', 'ตาราง')}
+                </button>
+                <button
+                  aria-pressed={journalView === 'gallery'}
+                  onClick={() => setJournalView('gallery')}
+                >
+                  {t('Chart gallery', 'แกลเลอรีกราฟ')}
+                </button>
+              </div>
               <div className="journal-toolbar">
                 <label className="search-input">
                   <Search size={17} />
@@ -734,17 +761,17 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   {t('Export', 'ส่งออก')}
                 </button>
               </div>
-              <TradeTable
-                trades={sorted.filter(
-                  (tr) =>
-                    (status === 'all' || tr.status === status) &&
-                    `${tr.symbol} ${tr.setup} ${tr.notes}`
-                      .toLowerCase()
-                      .includes(search.toLowerCase()),
-                )}
-                onView={setDetail}
-                t={t}
-              />
+              {journalView === 'gallery' ? (
+                <TradeGallery
+                  key={`${portfolio}:${search}:${status}`}
+                  trades={journalTrades}
+                  mode={mode}
+                  t={t}
+                  onView={setDetail}
+                />
+              ) : (
+                <TradeTable trades={journalTrades} onView={setDetail} t={t} />
+              )}
               <p className="table-foot">
                 {t(
                   `${trades.length} trades in the selected portfolio · Net P&L includes fees`,

@@ -130,6 +130,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   const [analysisTab, setAnalysisTab] = useState('summary');
   const [journalView, setJournalView] = useState('table');
   const [reviewRequested, setReviewRequested] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const reload = useCallback(async () => {
     setError('');
@@ -789,6 +790,8 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   ]}
                 />
                 <CsvImport
+                  open={importOpen}
+                  onOpenChange={setImportOpen}
                   accounts={selectedAccounts}
                   trades={data.trades}
                   t={t}
@@ -1116,6 +1119,11 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               serverError={error}
               onSave={async (tr) => {
                 if (await mutate('saveTrade', tr)) setEdit(null);
+              }}
+              onImport={() => {
+                setEdit(null);
+                navigate('journal');
+                setImportOpen(true);
               }}
             />
           )}

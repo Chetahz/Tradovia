@@ -1956,6 +1956,116 @@ button:disabled {
 .trade-form {
   margin-top: 8px;
 }
+.trade-entry-mode {
+  display: none;
+}
+.symbol-picker,
+.trade-segment-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.symbol-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 9px;
+}
+.symbol-picker legend,
+.trade-segment-field legend {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.symbol-custom-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 650;
+}
+.symbol-rail {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 1px 1px 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.symbol-rail button {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 92px;
+  min-height: 54px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--background);
+  text-align: left;
+  scroll-snap-align: start;
+}
+.symbol-rail button b {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.symbol-rail button small {
+  margin-top: 2px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.symbol-rail button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 11%, var(--background));
+  color: var(--primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.symbol-custom-field {
+  margin-top: 8px;
+}
+.trade-segment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trade-segments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+}
+.trade-segments button {
+  min-height: 36px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+.trade-segments button[aria-pressed='true'] {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.calculated-field output {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 11px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 65%, transparent);
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
 .trade-form-footer {
   display: flex;
   justify-content: space-between;
@@ -2484,25 +2594,121 @@ button:disabled {
   .form-field .pick {
     font-size: 14px !important;
   }
-  .trade-dialog {
-    padding: 23px 18px !important;
-    max-height: 94dvh;
-    max-width: calc(100vw - 16px) !important;
+  [data-slot='dialog-content'].trade-dialog {
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    translate: none !important;
+    transform: none !important;
+    width: 100vw;
+    max-width: none !important;
+    height: 100dvh;
+    max-height: none;
+    padding: max(18px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left)) !important;
+    border-radius: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+  }
+  .trade-dialog [data-slot='dialog-close'] {
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    min-width: 44px;
+    min-height: 44px;
   }
   .trade-dialog [data-slot='dialog-title'] {
-    font-size: 23px;
+    padding-right: 46px;
+    font-size: 22px;
+  }
+  .trade-dialog [data-slot='dialog-description'] {
+    padding-right: 36px;
+    line-height: 1.55;
+  }
+  .trade-entry-mode {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 14px;
+    padding: 4px;
+    border-radius: 11px;
+    background: var(--muted);
+  }
+  .trade-entry-mode button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    border-radius: 8px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .trade-entry-mode button[aria-selected='true'] {
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 2px 9px color-mix(in srgb, var(--foreground) 9%, transparent);
+  }
+  .trade-form > .journal-hint {
+    margin-bottom: 16px;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .trade-form .form-grid {
+    gap: 15px 10px;
+  }
+  .symbol-picker-heading {
+    margin-bottom: 7px;
+  }
+  .symbol-rail {
+    margin-right: calc(-1 * max(16px, env(safe-area-inset-right)));
+    padding-right: max(16px, env(safe-area-inset-right));
+    scrollbar-width: none;
+  }
+  .symbol-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .symbol-rail button {
+    min-width: 88px;
+    min-height: 58px;
+  }
+  .trade-segments button,
+  .trade-dialog .form-field input,
+  .trade-dialog .form-field textarea,
+  .trade-dialog .form-field .pick,
+  .calculated-field output {
+    min-height: 46px;
+  }
+  .trade-dialog .form-field input,
+  .trade-dialog .form-field textarea {
+    font-size: 16px;
+  }
+  .trade-note-field textarea {
+    min-height: 82px;
   }
   .trade-form-footer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: 10px;
-    bottom: -23px;
+    bottom: calc(-1 * max(14px, env(safe-area-inset-bottom)));
+    margin-left: calc(-1 * max(16px, env(safe-area-inset-left)));
+    margin-right: calc(-1 * max(16px, env(safe-area-inset-right)));
+    padding: 14px max(16px, env(safe-area-inset-right))
+      calc(14px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    box-shadow: 0 -12px 28px
+      color-mix(in srgb, var(--foreground) 8%, transparent);
   }
   .trade-form-footer > .button {
     grid-column: 1 / -1;
     width: 100%;
     justify-content: center;
+    min-height: 48px;
     padding: 12px 17px;
   }
   .risk-result {

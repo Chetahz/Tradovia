@@ -23,14 +23,17 @@ export default function CsvImport({
   trades,
   t,
   save,
+  open,
+  onOpenChange,
 }: {
   accounts: Account[];
   trades: Trade[];
   t: Translate;
   save: (trades: Trade[]) => Promise<boolean>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false),
-    [account, setAccount] = useState(accounts[0]?.id || '');
+  const [account, setAccount] = useState(accounts[0]?.id || '');
   const [rows, setRows] = useState<CsvRow[]>([]),
     [excluded, setExcluded] = useState<Set<number>>(new Set());
   const [error, setError] = useState(''),
@@ -112,7 +115,7 @@ export default function CsvImport({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!busy) setOpen(next);
+        if (!busy) onOpenChange(next);
       }}
     >
       <DialogTrigger className="button ghost compact">

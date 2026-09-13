@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Plus, Upload } from 'lucide-react';
 import { ReviewEvidence, ReviewFields, emptyReview } from './review-fields';
 import { Field, Pick, type Translate } from '@/components/workspace-ui';
 import {
@@ -26,6 +27,168 @@ const tradeError = (message: string, t: Translate) => {
   return t(message, translations[message] || 'ตรวจข้อมูลที่กรอกแล้วลองอีกครั้ง');
 };
 
+const primarySymbols = [
+  ['XAUUSD', 'Gold'],
+  ['EURUSD', 'Euro'],
+  ['GBPUSD', 'Pound'],
+  ['USDJPY', 'Yen'],
+  ['US30', 'Dow'],
+  ['NAS100', 'Nasdaq'],
+  ['BTCUSD', 'Bitcoin'],
+] as const;
+
+function DecimalField({
+  label,
+  value,
+  onValueChange,
+  required,
+  allowNegative = false,
+  blankZero = false,
+  className = '',
+}: {
+  label: string;
+  value: number;
+  onValueChange: (value: number) => void;
+  required?: boolean;
+  allowNegative?: boolean;
+  blankZero?: boolean;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState(
+    value === 0 && blankZero ? '' : String(value),
+  );
+  const pattern = allowNegative ? /^-?\d*(?:\.\d*)?$/ : /^\d*(?:\.\d*)?$/;
+  return (
+    <label className={`form-field ${className}`.trim()}>
+      <span>{label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        required={required}
+        value={draft}
+        onChange={(event) => {
+          const next = event.target.value.replace(',', '.');
+          if (!pattern.test(next)) return;
+          setDraft(next);
+          if (next === '' || next === '-' || next === '.' || next === '-.') {
+            onValueChange(0);
+            return;
+          }
+          const parsed = Number(next);
+          if (Number.isFinite(parsed)) onValueChange(parsed);
+        }}
+        onBlur={() => {
+          if (
+            draft === '' ||
+            draft === '-' ||
+            draft === '.' ||
+            draft === '-.'
+          ) {
+            setDraft(blankZero ? '' : '0');
+            onValueChange(0);
+            return;
+          }
+          const parsed = Number(draft);
+          if (Number.isFinite(parsed)) setDraft(String(parsed));
+        }}
+      />
+    </label>
+  );
+}
+
+function SymbolPicker({
+  value,
+  onChange,
+  t,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  t: Translate;
+}) {
+  const builtIn = primarySymbols.some(([symbol]) => symbol === value);
+  const [customOpen, setCustomOpen] = useState(!builtIn);
+  const [customDraft, setCustomDraft] = useState(builtIn ? '' : value);
+  const customSymbol = builtIn ? '' : value.trim().toUpperCase();
+  const symbols: readonly (readonly [string, string])[] = customSymbol
+    ? [...primarySymbols, [customSymbol, t('Custom', 'เพิ่มเอง')]]
+    : primarySymbols;
+  const saveCustom = (symbol: string) => {
+    const normalized = symbol.trim().toUpperCase();
+    if (!normalized) return;
+    onChange(normalized);
+    setCustomDraft(normalized);
+    setCustomOpen(false);
+  };
+  return (
+    <fieldset className="symbol-picker full">
+      <div className="symbol-picker-heading">
+        <legend>{t('Symbol', 'สินทรัพย์')}</legend>
+        <button
+          type="button"
+          className="symbol-custom-toggle"
+          onClick={() => {
+            setCustomDraft(builtIn ? '' : value);
+            setCustomOpen((open) => !open);
+          }}
+          aria-expanded={customOpen}
+        >
+          <Plus size={14} /> {t('Add your own', 'เพิ่มสินทรัพย์')}
+        </button>
+      </div>
+      <div
+        className="symbol-rail"
+        aria-label={t('Popular symbols', 'สินทรัพย์หลัก')}
+      >
+        {symbols.map(([symbol, name]) => (
+          <button
+            key={symbol}
+            type="button"
+            aria-pressed={value === symbol}
+            onClick={() => {
+              onChange(symbol);
+              setCustomOpen(false);
+            }}
+          >
+            <b>{symbol}</b>
+            <small>{name}</small>
+          </button>
+        ))}
+      </div>
+      {(customOpen || !symbols.some(([symbol]) => symbol === value)) && (
+        <label className="form-field symbol-custom-field">
+          <span>
+            {t('Broker symbol or another asset', 'ชื่อสินทรัพย์อื่นจากโบรกเกอร์')}
+          </span>
+          <input
+            required
+            maxLength={24}
+            value={customDraft}
+            autoCapitalize="characters"
+            placeholder={t(
+              'Example: ETHUSD or XAUUSDm',
+              'เช่น ETHUSD หรือ XAUUSDm',
+            )}
+            onChange={(event) => {
+              const next = event.target.value.toUpperCase();
+              setCustomDraft(next);
+              onChange(next);
+            }}
+            onBlur={(event) => saveCustom(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                saveCustom(event.currentTarget.value);
+                event.currentTarget.blur();
+              }
+            }}
+          />
+        </label>
+      )}
+    </fieldset>
+  );
+}
+
 export function TradeForm({
   trade,
   accounts,
@@ -34,6 +197,7 @@ export function TradeForm({
   t,
   busy,
   onSave,
+  onImport,
   serverError,
 }: {
   trade: Trade;
@@ -44,12 +208,18 @@ export function TradeForm({
   busy: boolean;
   serverError?: string;
   onSave: (t: Trade) => Promise<void>;
+  onImport?: () => void;
 }) {
   const [v, setV] = useState(trade),
     [error, setError] = useState(''),
     [uploading, setUploading] = useState(false),
     [expanded, setExpanded] = useState(false);
   const set = (k: keyof Trade, value: unknown) => setV({ ...v, [k]: value });
+  const plannedR = useMemo(() => {
+    const loss = v.side === 'LONG' ? v.entry - v.sl : v.sl - v.entry;
+    const reward = v.side === 'LONG' ? v.tp - v.entry : v.entry - v.tp;
+    return loss > 0 && reward > 0 ? reward / loss : 0;
+  }, [v.entry, v.side, v.sl, v.tp]);
   return (
     <form
       className="trade-form"
@@ -67,6 +237,23 @@ export function TradeForm({
         }
       }}
     >
+      <div
+        className="trade-entry-mode"
+        role="tablist"
+        aria-label={t('Entry method', 'วิธีบันทึก')}
+      >
+        <button type="button" role="tab" aria-selected="true">
+          {t('Manual', 'กรอกเอง')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          onClick={onImport}
+        >
+          <Upload size={15} /> {t('Import', 'นำเข้า')}
+        </button>
+      </div>
       <p className="journal-hint">
         {t(
           'Start with the execution and result. Add your plan, reflection and screenshots below.',
@@ -151,36 +338,48 @@ export function TradeForm({
             options={accounts.map((a) => ({ value: a.id, label: a.name }))}
           />
         </label>
-        <Field
-          label={t('Symbol', 'สินทรัพย์')}
-          required
-          maxLength={24}
+        <SymbolPicker
           value={v.symbol}
-          onChange={(e) => set('symbol', e.target.value.toUpperCase())}
+          onChange={(symbol) => set('symbol', symbol)}
+          t={t}
         />
-        <label className="form-field">
-          <span>{t('Direction', 'ทิศทาง')}</span>
-          <Pick
-            label="Direction"
-            value={v.side}
-            onChange={(x) => set('side', x)}
-            options={[
-              { value: 'LONG', label: 'Long / Buy' },
-              { value: 'SHORT', label: 'Short / Sell' },
-            ]}
-          />
-        </label>
-        <label className="form-field">
-          <span>{t('Status', 'สถานะ')}</span>
-          <Pick
-            label="Trade status"
-            value={v.status}
-            onChange={(x) => set('status', x)}
-            options={[
-              { value: 'OPEN', label: t('Open', 'ยังไม่ปิด') },
-              { value: 'CLOSED', label: t('Closed', 'ปิดแล้ว') },
-            ]}
-          />
+        <fieldset className="trade-segment-field">
+          <legend>{t('Direction', 'ทิศทาง')}</legend>
+          <div className="trade-segments">
+            <button
+              type="button"
+              aria-pressed={v.side === 'LONG'}
+              onClick={() => set('side', 'LONG')}
+            >
+              Long / Buy
+            </button>
+            <button
+              type="button"
+              aria-pressed={v.side === 'SHORT'}
+              onClick={() => set('side', 'SHORT')}
+            >
+              Short / Sell
+            </button>
+          </div>
+        </fieldset>
+        <fieldset className="trade-segment-field">
+          <legend>{t('Status', 'สถานะ')}</legend>
+          <div className="trade-segments">
+            <button
+              type="button"
+              aria-pressed={v.status === 'OPEN'}
+              onClick={() => set('status', 'OPEN')}
+            >
+              {t('Open', 'ยังไม่ปิด')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={v.status === 'CLOSED'}
+              onClick={() => set('status', 'CLOSED')}
+            >
+              {t('Closed', 'ปิดแล้ว')}
+            </button>
+          </div>
           <small className="field-help">
             {v.status === 'OPEN'
               ? t(
@@ -192,7 +391,7 @@ export function TradeForm({
                   'ใช้ผลลัพธ์ที่เกิดขึ้นจริงจากรายงานโบรกเกอร์',
                 )}
           </small>
-        </label>
+        </fieldset>
         <Field
           label={t('Date', 'วันที่')}
           required
@@ -207,24 +406,43 @@ export function TradeForm({
           value={v.time}
           onChange={(e) => set('time', e.target.value)}
         />
-        {(
-          [
-            ['entry', 'Entry price', 'ราคาเข้า'],
-            ['lot', 'Size / lot', 'ขนาด / Lot'],
-            ['risk', 'Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)'],
-          ] as const
-        ).map(([k, en, th]) => (
-          <Field
-            key={k}
-            label={t(en, th)}
-            type="number"
-            step="any"
-            required
-            min={0}
-            value={(k === 'entry' || k === 'lot') && v[k] === 0 ? '' : v[k]}
-            onChange={(e) => set(k, Number(e.target.value))}
-          />
-        ))}
+        <DecimalField
+          label={t('Entry price', 'ราคาเข้า')}
+          value={v.entry}
+          onValueChange={(value) => set('entry', value)}
+          required
+          blankZero
+        />
+        <DecimalField
+          label={t('Size / lot', 'ขนาด / Lot')}
+          value={v.lot}
+          onValueChange={(value) => set('lot', value)}
+          required
+          blankZero
+        />
+        <DecimalField
+          label={t('Stop loss', 'จุดตัดขาดทุน')}
+          value={v.sl}
+          onValueChange={(value) => set('sl', value)}
+          blankZero
+        />
+        <DecimalField
+          label={t('Take profit', 'จุดทำกำไร')}
+          value={v.tp}
+          onValueChange={(value) => set('tp', value)}
+          blankZero
+        />
+        <DecimalField
+          label={t('Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)')}
+          value={v.risk}
+          onValueChange={(value) => set('risk', value)}
+          required
+          blankZero
+        />
+        <div className="form-field calculated-field">
+          <span>{t('Planned reward / risk', 'Reward / Risk ตามแผน')}</span>
+          <output>{plannedR > 0 ? `1 : ${plannedR.toFixed(2)}` : '—'}</output>
+        </div>
         {v.status === 'CLOSED' &&
           (
             [
@@ -232,25 +450,54 @@ export function TradeForm({
               ['fees', 'Fees (USD)', 'ค่าธรรมเนียม (USD)'],
             ] as const
           ).map(([k, en, th]) => (
-            <Field
+            <DecimalField
               key={k}
               label={t(en, th)}
-              type="number"
-              step="any"
               required
-              min={k === 'fees' ? 0 : undefined}
               value={v[k]}
-              onChange={(e) => set(k, Number(e.target.value))}
+              allowNegative={k === 'gross'}
+              onValueChange={(value) => set(k, value)}
             />
           ))}
-        <Field
-          label={t('Technique tags', 'เทคนิคที่ใช้')}
-          className="full"
-          value={v.setup}
-          maxLength={160}
-          placeholder="FVG + MSS, London"
-          onChange={(e) => set('setup', e.target.value)}
-        />
+        <label className="form-field full">
+          <span>{t('Technique / setup', 'เทคนิค / Setup')}</span>
+          <input
+            list="trade-technique-options"
+            value={v.setup}
+            maxLength={160}
+            placeholder={t(
+              'Choose a Playbook technique or type your own',
+              'เลือกเทคนิคจาก Playbook หรือพิมพ์เพิ่มเอง',
+            )}
+            onChange={(event) => set('setup', event.target.value)}
+          />
+          <datalist id="trade-technique-options">
+            {Array.from(
+              new Set(
+                playbooks
+                  .flatMap((playbook) => [playbook.name, playbook.technique])
+                  .filter(Boolean),
+              ),
+            ).map((technique) => (
+              <option key={technique} value={technique}>
+                {technique}
+              </option>
+            ))}
+          </datalist>
+        </label>
+        <label className="form-field full trade-note-field">
+          <span>{t('Quick note (optional)', 'บันทึกเพิ่มเติม (ไม่บังคับ)')}</span>
+          <textarea
+            value={v.notes}
+            maxLength={10000}
+            rows={3}
+            onChange={(event) => set('notes', event.target.value)}
+            placeholder={t(
+              'What did you see or decide?',
+              'สิ่งที่เห็นหรือเหตุผลในการตัดสินใจ…',
+            )}
+          />
+        </label>
       </div>
       <details
         className="journal-extra"
@@ -261,37 +508,6 @@ export function TradeForm({
           {t('Plan, reflection & screenshots', 'แผน บันทึกทบทวน และภาพกราฟ')}
           <span>{t('Optional details', 'รายละเอียดเพิ่มเติม')}</span>
         </summary>
-        <div className="form-grid">
-          {(
-            [
-              ['sl', 'Stop loss', 'จุดตัดขาดทุน'],
-              ['tp', 'Take profit', 'จุดทำกำไร'],
-            ] as const
-          ).map(([key, en, thai]) => (
-            <Field
-              key={key}
-              label={t(en, thai)}
-              type="number"
-              min="0"
-              step="any"
-              value={v[key]}
-              onChange={(e) => set(key, Number(e.target.value))}
-            />
-          ))}
-          <label className="form-field full">
-            <span>{t('Notes & reflection', 'บันทึกและทบทวน')}</span>
-            <textarea
-              value={v.notes}
-              maxLength={10000}
-              rows={4}
-              onChange={(e) => set('notes', e.target.value)}
-              placeholder={t(
-                'What did you see? Did you follow your plan?',
-                'เห็นอะไรในตลาด? ทำตามแผนได้หรือไม่?',
-              )}
-            />
-          </label>
-        </div>
         <button
           className="text-button journal-prompt"
           type="button"

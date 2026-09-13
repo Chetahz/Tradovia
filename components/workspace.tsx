@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import ChartImages from './chart-images';
 import TradeGallery from './trade-gallery';
+import WeeklyReview from './weekly-review';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard,
@@ -797,7 +798,16 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               >
                 Deep Analysis / Insights
               </button>
+              <button
+                aria-pressed={analysisTab === 'weekly'}
+                onClick={() => setAnalysisTab('weekly')}
+              >
+                {t('Weekly review', 'สรุปรายสัปดาห์')}
+              </button>
             </div>
+          )}
+          {page === 'analytics' && analysisTab === 'weekly' && (
+            <WeeklyReview trades={trades} t={t} onView={setDetail} />
           )}
           {page === 'analytics' && analysisTab === 'deep' && (
             <DeepAnalysis trades={trades} t={t} onView={setDetail} />

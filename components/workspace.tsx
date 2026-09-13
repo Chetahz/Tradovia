@@ -739,6 +739,10 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               openRequest={reviewRequested}
               save={(tr) => mutate('saveTrade', tr)}
               onView={setDetail}
+              onOpenInsights={() => {
+                setAnalysisTab('deep');
+                navigate('analytics');
+              }}
             />
           )}
           {page === 'journal' && (

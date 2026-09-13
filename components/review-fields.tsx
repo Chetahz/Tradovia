@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 import ChartImages from './chart-images';
 import { useState } from 'react';
 import { planChecklist, type Trade } from '@/lib/domain';
@@ -223,61 +222,64 @@ export function ReviewEvidence({
           {error}
         </p>
       )}
-      <div className="review-evidence-grid">
-        {trade.imageIds.map((id) => (
-          <div className="review-evidence-item" key={id}>
-            <Image
-              unoptimized
-              width={320}
-              height={190}
-              src={`/api/images/${id}?mode=${mode}`}
-              alt={t('Trade chart', 'ภาพกราฟการเทรด')}
-            />
-            <label className="daily-field">
-              {t('Chart timing', 'ช่วงเวลาของภาพ')}
-              <select
-                disabled={disabled}
-                value={trade.imageStages?.[id] || 'other'}
-                onChange={(e) =>
-                  onChange({
-                    ...trade,
-                    imageStages: {
-                      ...trade.imageStages,
-                      [id]: e.target.value as 'before' | 'after' | 'other',
-                    },
-                  })
-                }
-              >
-                <option value="other">
-                  {t('Unlabelled / other', 'ยังไม่ระบุ / อื่น ๆ')}
-                </option>
-                <option value="before">
-                  {t('Before entry', 'ก่อนเข้าเทรด')}
-                </option>
-                <option value="after">{t('After exit', 'หลังจบเทรด')}</option>
-              </select>
-            </label>
-            <button
-              disabled={disabled}
-              type="button"
-              className="text-button"
-              onClick={() =>
-                onChange({
-                  ...trade,
-                  imageIds: trade.imageIds.filter((image) => image !== id),
-                })
-              }
-            >
-              {t('Remove from this trade', 'นำออกจากเทรดนี้')}
-            </button>
-          </div>
-        ))}
-      </div>
       {trade.imageIds.length > 0 && (
-        <details>
-          <summary>{t('Open full-size charts', 'เปิดภาพกราฟขนาดเต็ม')}</summary>
+        <>
           <ChartImages trade={trade} mode={mode} t={t} />
-        </details>
+          <div className="review-evidence-list">
+            {trade.imageIds.map((id, index) => (
+              <div className="review-evidence-item" key={id}>
+                <span>
+                  {t('Chart', 'ภาพกราฟ')} {index + 1}
+                </span>
+                <label className="daily-field">
+                  <span className="sr-only">
+                    {t('Chart timing', 'ช่วงเวลาของภาพ')}
+                  </span>
+                  <select
+                    disabled={disabled}
+                    aria-label={`${t('Chart timing', 'ช่วงเวลาของภาพ')} ${index + 1}`}
+                    value={trade.imageStages?.[id] || 'other'}
+                    onChange={(e) =>
+                      onChange({
+                        ...trade,
+                        imageStages: {
+                          ...trade.imageStages,
+                          [id]: e.target.value as 'before' | 'after' | 'other',
+                        },
+                      })
+                    }
+                  >
+                    <option value="other">
+                      {t('Unlabelled / other', 'ยังไม่ระบุ / อื่น ๆ')}
+                    </option>
+                    <option value="before">
+                      {t('Before entry', 'ก่อนเข้าเทรด')}
+                    </option>
+                    <option value="after">
+                      {t('After exit', 'หลังจบเทรด')}
+                    </option>
+                  </select>
+                </label>
+                <button
+                  disabled={disabled}
+                  type="button"
+                  className="text-button"
+                  onClick={() => {
+                    const imageStages = { ...trade.imageStages };
+                    delete imageStages[id];
+                    onChange({
+                      ...trade,
+                      imageIds: trade.imageIds.filter((image) => image !== id),
+                      imageStages,
+                    });
+                  }}
+                >
+                  {t('Remove', 'นำออก')}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </details>
   );

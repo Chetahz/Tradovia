@@ -16,6 +16,7 @@ export default function QuickReview({
   t,
   save,
   onView,
+  onOpenInsights,
   mode,
   openRequest = 0,
 }: {
@@ -24,6 +25,7 @@ export default function QuickReview({
   t: Translate;
   save: (trade: Trade) => Promise<boolean>;
   onView: (trade: Trade) => void;
+  onOpenInsights: () => void;
   mode: string;
   openRequest?: number;
 }) {
@@ -36,7 +38,7 @@ export default function QuickReview({
     [saved, setSaved] = useState('');
   useEffect(() => {
     if (!openRequest) return;
-    setOpen(true);
+    queueMicrotask(() => setOpen(true));
     const frame = requestAnimationFrame(() =>
       section.current?.scrollIntoView({ block: 'start' }),
     );
@@ -85,9 +87,12 @@ export default function QuickReview({
         </button>
       </div>
       {saved && (
-        <p className="review-saved" role="status">
-          {saved}
-        </p>
+        <output className="review-saved">
+          <span>{saved}</span>
+          <button className="text-button" onClick={onOpenInsights}>
+            {t('View insights', 'ดู Insights')}
+          </button>
+        </output>
       )}
       {open && (
         <>
@@ -175,6 +180,14 @@ export default function QuickReview({
                       'เมื่อมีเทรดที่ปิดแล้ว จะเริ่มทบทวนได้จากที่นี่',
                     )}
               </p>
+              {closed.length > 0 && (
+                <button
+                  className="button ghost compact"
+                  onClick={onOpenInsights}
+                >
+                  {t('See what your reviews reveal', 'ดูสิ่งที่การทบทวนบอกเรา')}
+                </button>
+              )}
             </div>
           )}
         </>

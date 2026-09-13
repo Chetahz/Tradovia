@@ -1,8 +1,6 @@
 'use client';
-import Image from 'next/image';
 import { useState } from 'react';
-import { ImagePlus, X } from 'lucide-react';
-import { ReviewFields, emptyReview } from './review-fields';
+import { ReviewEvidence, ReviewFields, emptyReview } from './review-fields';
 import { Field, Pick, type Translate } from '@/components/workspace-ui';
 import {
   validateTrade,
@@ -13,6 +11,21 @@ import {
   type Account,
   type WorkspaceData,
 } from '@/lib/domain';
+
+const tradeError = (message: string, t: Translate) => {
+  const translations: Record<string, string> = {
+    'Invalid symbol': 'กรอกชื่อสินทรัพย์ด้วยตัวอักษรหรือตัวเลข เช่น XAUUSD',
+    'Invalid date or time': 'ตรวจวันที่และเวลาให้ถูกต้อง',
+    'Entry and size must be positive': 'ราคาเข้าและขนาด Lot ต้องมากกว่า 0',
+    'Stop loss must be on the loss side of entry':
+      'Stop loss ต้องอยู่ด้านขาดทุนของราคาเข้า',
+    'Target must be on the profit side of entry':
+      'Take profit ต้องอยู่ด้านกำไรของราคาเข้า',
+    'Invalid direction or status': 'ตรวจทิศทางและสถานะการเทรด',
+  };
+  return t(message, translations[message] || 'ตรวจข้อมูลที่กรอกแล้วลองอีกครั้ง');
+};
+
 export function TradeForm({
   trade,
   accounts,
@@ -48,7 +61,9 @@ export function TradeForm({
           await onSave(v);
         } catch (e) {
           setExpanded(true);
-          setError(e instanceof Error ? e.message : 'Invalid trade');
+          setError(
+            tradeError(e instanceof Error ? e.message : 'Invalid trade', t),
+          );
         }
       }}
     >
@@ -155,6 +170,29 @@ export function TradeForm({
             ]}
           />
         </label>
+        <label className="form-field">
+          <span>{t('Status', 'สถานะ')}</span>
+          <Pick
+            label="Trade status"
+            value={v.status}
+            onChange={(x) => set('status', x)}
+            options={[
+              { value: 'OPEN', label: t('Open', 'ยังไม่ปิด') },
+              { value: 'CLOSED', label: t('Closed', 'ปิดแล้ว') },
+            ]}
+          />
+          <small className="field-help">
+            {v.status === 'OPEN'
+              ? t(
+                  'Record the outcome after the position closes.',
+                  'เมื่อปิดสถานะแล้วค่อยกลับมาบันทึกผลลัพธ์',
+                )
+              : t(
+                  'Use the realized result shown by your broker.',
+                  'ใช้ผลลัพธ์ที่เกิดขึ้นจริงจากรายงานโบรกเกอร์',
+                )}
+          </small>
+        </label>
         <Field
           label={t('Date', 'วันที่')}
           required
@@ -174,8 +212,6 @@ export function TradeForm({
             ['entry', 'Entry price', 'ราคาเข้า'],
             ['lot', 'Size / lot', 'ขนาด / Lot'],
             ['risk', 'Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)'],
-            ['gross', 'Realized gross P&L (USD)', 'กำไรก่อนค่าธรรมเนียม (USD)'],
-            ['fees', 'Fees (USD)', 'ค่าธรรมเนียม (USD)'],
           ] as const
         ).map(([k, en, th]) => (
           <Field
@@ -184,23 +220,29 @@ export function TradeForm({
             type="number"
             step="any"
             required
-            min={k === 'gross' ? undefined : 0}
+            min={0}
             value={(k === 'entry' || k === 'lot') && v[k] === 0 ? '' : v[k]}
             onChange={(e) => set(k, Number(e.target.value))}
           />
         ))}
-        <label className="form-field">
-          <span>{t('Status', 'สถานะ')}</span>
-          <Pick
-            label="Trade status"
-            value={v.status}
-            onChange={(x) => set('status', x)}
-            options={[
-              { value: 'CLOSED', label: t('Closed', 'ปิดแล้ว') },
-              { value: 'OPEN', label: t('Open', 'ยังไม่ปิด') },
-            ]}
-          />
-        </label>
+        {v.status === 'CLOSED' &&
+          (
+            [
+              ['gross', 'Realized gross P&L (USD)', 'กำไรก่อนค่าธรรมเนียม (USD)'],
+              ['fees', 'Fees (USD)', 'ค่าธรรมเนียม (USD)'],
+            ] as const
+          ).map(([k, en, th]) => (
+            <Field
+              key={k}
+              label={t(en, th)}
+              type="number"
+              step="any"
+              required
+              min={k === 'fees' ? 0 : undefined}
+              value={v[k]}
+              onChange={(e) => set(k, Number(e.target.value))}
+            />
+          ))}
         <Field
           label={t('Technique tags', 'เทคนิคที่ใช้')}
           className="full"
@@ -262,80 +304,14 @@ export function TradeForm({
         >
           {t('Add reflection prompts', 'เพิ่มหัวข้อช่วยทบทวน')} +
         </button>
-        <div className="upload-section">
-          <label className="button ghost compact">
-            <ImagePlus size={17} />
-            {uploading
-              ? t('Uploading…', 'กำลังอัปโหลด…')
-              : t('Add trade image', 'เพิ่มภาพกราฟ')}
-            <input
-              aria-label="Upload trade image"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="sr-only"
-              disabled={uploading || v.imageIds.length >= 5}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setUploading(true);
-                setError('');
-                try {
-                  const fd = new FormData();
-                  fd.set('image', file);
-                  const r = await fetch(`/api/images?mode=${mode}`, {
-                    method: 'POST',
-                    body: fd,
-                  });
-                  const res = (await r.json()) as {
-                    id: string;
-                    error?: string;
-                  };
-                  if (!r.ok) throw new Error(res.error);
-                  setV((current) => ({
-                    ...current,
-                    imageIds: [...current.imageIds, res.id],
-                  }));
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : 'Upload failed');
-                } finally {
-                  setUploading(false);
-                }
-              }}
-            />
-          </label>
-          <small>
-            {t(
-              'PNG, JPG, WebP · 5 MB each · up to 5 images',
-              'PNG, JPG, WebP · ภาพละไม่เกิน 5 MB · สูงสุด 5 ภาพ',
-            )}
-          </small>
-          <div className="trade-images">
-            {v.imageIds.map((id) => (
-              <div key={id}>
-                <Image
-                  unoptimized
-                  width={130}
-                  height={95}
-                  src={`/api/images/${id}?mode=${mode}`}
-                  alt="Trade attachment"
-                />
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label="Remove image"
-                  onClick={() =>
-                    set(
-                      'imageIds',
-                      v.imageIds.filter((x) => x !== id),
-                    )
-                  }
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ReviewEvidence
+          trade={v}
+          mode={mode}
+          t={t}
+          disabled={busy || uploading}
+          onChange={setV}
+          onUploading={setUploading}
+        />
       </details>
       <details className="review-evidence">
         <summary>

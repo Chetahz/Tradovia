@@ -3063,3 +3063,155 @@ html[lang='th'] .hero h1 {
     gap: 6px;
   }
 }
+
+.chart-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.chart-thumbnail {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  text-align: left;
+  cursor: zoom-in;
+}
+.chart-thumbnail img {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  background: var(--muted);
+}
+.chart-thumbnail span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  font-size: 12px;
+  gap: 10px;
+}
+[data-slot='dialog-content'].chart-lightbox {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  transform: none;
+  translate: none;
+  border-radius: 0;
+  padding: max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #101816;
+  color: #edf4f0;
+  z-index: 100;
+  animation: none;
+  overflow: hidden;
+}
+.chart-lightbox-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 6px;
+  flex-shrink: 0;
+}
+.chart-lightbox-heading [data-slot='dialog-title'] {
+  color: #edf4f0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.chart-lightbox-heading [data-slot='dialog-description'] {
+  color: #adbbb4;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.chart-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid #42534a;
+  border-radius: 10px;
+  color: #edf4f0;
+  background: #21332a;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.chart-control:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.chart-control:focus-visible,
+.chart-thumbnail:focus-visible,
+.chart-zoom-stage:focus-visible {
+  outline: 2px solid #7cdeb0;
+  outline-offset: -3px;
+}
+.chart-zoom-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.chart-zoom-toolbar output {
+  width: 52px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.chart-fit {
+  padding: 0 12px;
+}
+.chart-zoom-stage {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #080d0b;
+  border-radius: 8px;
+  touch-action: none;
+  user-select: none;
+  overscroll-behavior: contain;
+}
+.chart-zoom-stage .chart-full-image {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+  pointer-events: none;
+}
+.chart-image-message {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 24px;
+  text-align: center;
+  color: #adbbb4;
+}
+@media (max-width: 480px) {
+  .chart-zoom-toolbar {
+    gap: 5px;
+  }
+  .chart-fit {
+    padding: 0 8px;
+  }
+  .chart-lightbox-heading {
+    padding: 0;
+  }
+}

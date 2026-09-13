@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import ChartImages from './chart-images';
 import { useState } from 'react';
 import { planChecklist, type Trade } from '@/lib/domain';
 import type { Translate } from './workspace-ui';
@@ -272,6 +273,12 @@ export function ReviewEvidence({
           </div>
         ))}
       </div>
+      {trade.imageIds.length > 0 && (
+        <details>
+          <summary>{t('Open full-size charts', 'เปิดภาพกราฟขนาดเต็ม')}</summary>
+          <ChartImages trade={trade} mode={mode} t={t} />
+        </details>
+      )}
     </details>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import Image from 'next/image';
+import ChartImages from './chart-images';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard,
@@ -1159,37 +1159,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   )}
                 </p>
               )}
-              <div className="trade-images">
-                {detail.imageIds.map((id) => (
-                  <details key={id} className="journal-image">
-                    <summary>
-                      <Image
-                        unoptimized
-                        width={130}
-                        height={95}
-                        src={`/api/images/${id}?mode=${mode}`}
-                        alt={t('Trade screenshot', 'ภาพกราฟการเทรด')}
-                      />
-                      <span>
-                        {detail.imageStages?.[id] === 'before'
-                          ? t('Before entry', 'ก่อนเข้าเทรด')
-                          : detail.imageStages?.[id] === 'after'
-                            ? t('After exit', 'หลังจบเทรด')
-                            : t('Chart', 'ภาพกราฟ')}{' '}
-                        · {t('Expand image', 'ขยายภาพ')}
-                      </span>
-                    </summary>
-                    <Image
-                      unoptimized
-                      width={900}
-                      height={600}
-                      src={`/api/images/${id}?mode=${mode}`}
-                      alt={t('Expanded trade screenshot', 'ภาพกราฟขยาย')}
-                      className="journal-image-expanded"
-                    />
-                  </details>
-                ))}
-              </div>
+              <ChartImages trade={detail} mode={mode} t={t} />
               <div className="actions">
                 <button
                   className="button ink"

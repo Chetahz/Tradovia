@@ -2645,11 +2645,15 @@ button:disabled {
     font-size: 14px !important;
   }
   [data-slot='dialog-content'].trade-dialog {
-    inset: 0 !important;
+    inset: 0 auto auto 0 !important;
     top: 0 !important;
     left: 0 !important;
-    translate: none !important;
+    right: auto !important;
+    bottom: auto !important;
+    translate: 0 0 !important;
     transform: none !important;
+    margin: 0 !important;
+    display: block !important;
     width: 100vw;
     max-width: none !important;
     height: 100dvh;
@@ -2663,6 +2667,12 @@ button:disabled {
     overscroll-behavior: contain;
     scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom));
     -webkit-overflow-scrolling: touch;
+  }
+  .trade-dialog > [data-slot='dialog-description'] {
+    margin-top: 8px;
+  }
+  .trade-dialog > .trade-form {
+    margin-top: 14px;
   }
   .trade-dialog [data-slot='dialog-close'] {
     top: max(10px, env(safe-area-inset-top));
@@ -2762,8 +2772,12 @@ button:disabled {
     padding: 12px 17px;
   }
   .trade-detail-dialog {
-    gap: 14px;
     scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  .trade-detail-dialog
+    > :not([data-slot='dialog-close'])
+    + :not([data-slot='dialog-close']) {
+    margin-top: 14px;
   }
   .trade-detail-header {
     align-items: center;
@@ -3594,13 +3608,18 @@ html[lang='th'] .hero h1 {
 }
 [data-slot='dialog-content'].chart-lightbox {
   position: fixed;
-  inset: 0;
-  width: 100%;
+  inset: 0 auto auto 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100vw;
   height: 100dvh;
   max-width: none;
   max-height: none;
-  transform: none;
-  translate: none;
+  margin: 0 !important;
+  transform: none !important;
+  translate: 0 0 !important;
   border-radius: 0;
   padding: max(12px, env(safe-area-inset-top))
     max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))

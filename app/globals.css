@@ -3490,3 +3490,313 @@ html[lang='th'] .hero h1 {
     gap: 8px;
   }
 }
+
+/* Account report: quiet depth and compact controls keep dense data approachable. */
+.account-report {
+  display: grid;
+  gap: 20px;
+}
+.report-heading,
+.report-filter-bar,
+.report-hero,
+.report-hero dl,
+.report-stat-grid article dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.report-heading h2 {
+  margin: 8px 0 6px;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  line-height: 1.15;
+}
+.report-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted-foreground);
+  line-height: 1.65;
+}
+.report-download {
+  flex-shrink: 0;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.report-filter-bar {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 92%, var(--accent));
+  flex-wrap: wrap;
+}
+.report-presets {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--muted);
+  overflow-x: auto;
+}
+.report-presets button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted-foreground);
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+.report-presets button:hover {
+  color: var(--foreground);
+}
+.report-presets button[aria-pressed='true'] {
+  color: var(--foreground);
+  background: var(--background);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.report-presets button:focus-visible,
+.report-dates input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.report-dates {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.report-dates label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.report-dates input {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 10px;
+  color: var(--foreground);
+  background: var(--background);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.report-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 8% 0%,
+      color-mix(in srgb, var(--primary) 11%, transparent),
+      transparent 38%
+    ),
+    var(--card);
+}
+.report-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), transparent 72%);
+  opacity: 0.65;
+}
+.report-hero > div {
+  display: grid;
+  gap: 6px;
+  min-width: 230px;
+}
+.report-hero > div > span,
+.report-hero small,
+.report-hero dt {
+  color: var(--muted-foreground);
+}
+.report-hero > div > span {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.report-hero > div > strong {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.report-hero dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  min-width: min(100%, 430px);
+  margin: 0;
+}
+.report-hero dl > div {
+  display: grid;
+  gap: 4px;
+}
+.report-hero dt,
+.report-hero dd {
+  margin: 0;
+}
+.report-hero dt {
+  font-size: 12px;
+}
+.report-hero dd {
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.report-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.report-stat-grid article {
+  position: relative;
+  min-width: 0;
+  padding-top: 26px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.report-stat-grid article:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.report-positive-card::before,
+.report-negative-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  width: 42px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: var(--primary);
+}
+.report-negative-card::before {
+  background: var(--destructive);
+}
+.report-card-label {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.report-stat-grid article dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.report-stat-grid article dl > div {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.report-stat-grid article dl > div:last-child {
+  border-bottom: 0;
+}
+.report-stat-grid dt,
+.report-stat-grid dd {
+  margin: 0;
+}
+.report-stat-grid dt {
+  color: var(--muted-foreground);
+}
+.report-stat-grid dd {
+  text-align: right;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.report-chart-panel .section-heading {
+  align-items: flex-end;
+}
+.report-chart-panel .section-heading h2 {
+  margin-top: 7px;
+}
+.report-chart-panel .section-heading > strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.report-chart {
+  height: 330px;
+  margin-top: 18px;
+}
+.report-note {
+  margin: 10px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.report-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 64px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.report-empty h3,
+.report-empty p {
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .report-heading,
+  .report-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .report-download {
+    align-self: flex-start;
+  }
+  .report-hero dl {
+    width: 100%;
+  }
+  .report-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 680px) {
+  .report-filter-bar,
+  .report-dates {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .report-presets {
+    width: 100%;
+  }
+  .report-dates {
+    width: 100%;
+  }
+  .report-dates label {
+    justify-content: space-between;
+  }
+  .report-dates input {
+    width: min(72%, 230px);
+  }
+  .report-hero dl {
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
+  }
+  .report-chart {
+    height: 270px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-presets button,
+  .report-stat-grid article {
+    transition: none;
+  }
+  .report-stat-grid article:hover {
+    transform: none;
+  }
+}

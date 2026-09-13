@@ -3,6 +3,7 @@ import Link from 'next/link';
 import ChartImages from './chart-images';
 import TradeGallery from './trade-gallery';
 import WeeklyReview from './weekly-review';
+import AccountReport from './account-report';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard,
@@ -804,7 +805,16 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
               >
                 {t('Weekly review', 'สรุปรายสัปดาห์')}
               </button>
+              <button
+                aria-pressed={analysisTab === 'report'}
+                onClick={() => setAnalysisTab('report')}
+              >
+                {t('Account report', 'รายงานบัญชี')}
+              </button>
             </div>
+          )}
+          {page === 'analytics' && analysisTab === 'report' && (
+            <AccountReport trades={trades} capital={capital} t={t} />
           )}
           {page === 'analytics' && analysisTab === 'weekly' && (
             <WeeklyReview trades={trades} t={t} onView={setDetail} />

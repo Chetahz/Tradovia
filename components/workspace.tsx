@@ -28,6 +28,8 @@ import {
   Check,
   LogOut,
   Compass,
+  ChevronLeft,
+  Info,
   X,
 } from 'lucide-react';
 import {
@@ -173,6 +175,16 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
     document.documentElement.lang = th ? 'th' : 'en';
     localStorage.setItem('tradovia.language', th ? 'th' : 'en');
   }, [th, preferencesReady]);
+  useEffect(() => {
+    if (!preferencesReady || mode !== 'real') return;
+    queueMicrotask(() => {
+      try {
+        if (!localStorage.getItem(`tradovia.onboarding.v2.${mode}`)) setTour(0);
+      } catch {
+        /* The tour remains available from the workspace guide. */
+      }
+    });
+  }, [mode, preferencesReady]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(''), 5000);
@@ -562,11 +574,38 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
             page={page}
             mode={mode}
             hasPortfolio={data.portfolios.length > 0}
+            hasPlaybook={(data.playbooks || []).length > 0}
             hasTrades={data.trades.length > 0}
             t={t}
             navigate={navigate}
             addTrade={addTrade}
           />
+          {page === 'analytics' && (
+            <aside className="context-note">
+              <Info size={17} />
+              <p>
+                <strong>{t('Reading the numbers', 'อ่านตัวเลขให้ง่ายขึ้น')}</strong>
+                {t(
+                  'Profit Factor compares gross profit with gross loss. Expectancy is the average net result per closed trade. Drawdown measures the fall from an equity peak.',
+                  'Profit Factor เปรียบเทียบกำไรรวมกับขาดทุนรวม Expectancy คือผลสุทธิเฉลี่ยต่อไม้ และ Drawdown คือการลดลงจากจุดสูงสุดของพอร์ต',
+                )}
+              </p>
+            </aside>
+          )}
+          {page === 'risk' && (
+            <aside className="context-note">
+              <Info size={17} />
+              <p>
+                <strong>
+                  {t('Before using the lot size', 'ก่อนใช้ขนาด Lot')}
+                </strong>
+                {t(
+                  'Open Symbol Specification in MT5 and confirm Contract size, Tick value and Volume step. These can differ by symbol, account type and broker.',
+                  'เปิด Symbol Specification ใน MT5 แล้วตรวจ Contract size, Tick value และ Volume step เพราะอาจต่างกันตามสินทรัพย์ ประเภทบัญชี และโบรกเกอร์',
+                )}
+              </p>
+            </aside>
+          )}
           {page === 'overview' && (
             <>
               <section className="panel review-focus">
@@ -1378,61 +1417,128 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       <Dialog
         open={tour >= 0}
         onOpenChange={(open) => {
-          if (!open) setTour(-1);
+          if (!open) {
+            try {
+              localStorage.setItem(`tradovia.onboarding.v2.${mode}`, 'skipped');
+            } catch {
+              /* Session-only dismissal. */
+            }
+            setTour(-1);
+          }
         }}
       >
         <DialogContent className="tour-dialog">
-          <span className="overline">TRADOVIA · {tour + 1} / 4</span>
+          <div className="tour-progress-row">
+            <span className="overline">TRADOVIA · {tour + 1} / 5</span>
+            <span>{Math.max(0, Math.round(((tour + 1) / 5) * 100))}%</span>
+          </div>
+          <div className="tour-progress" aria-hidden="true">
+            <i style={{ width: `${Math.max(0, ((tour + 1) / 5) * 100)}%` }} />
+          </div>
           <DialogTitle>
             {t(
               [
                 'Welcome to your trading OS.',
-                'Every trade connects.',
+                'Record the decision.',
+                'Turn experience into a Playbook.',
                 'Protect your next position.',
-                'Make the process yours.',
+                'Use the result to improve.',
               ][tour] ?? '',
               [
                 'ยินดีต้อนรับสู่ระบบเทรดของคุณ',
-                'ทุกการเทรดเชื่อมถึงกัน',
+                'บันทึกเหตุผลของการตัดสินใจ',
+                'เปลี่ยนประสบการณ์เป็น Playbook',
                 'ดูแลความเสี่ยงของไม้ถัดไป',
-                'สร้างระบบในแบบของคุณ',
+                'ใช้ผลลัพธ์เพื่อพัฒนารอบถัดไป',
               ][tour] ?? '',
             )}
           </DialogTitle>
           <DialogDescription>
             {t(
               [
-                'This is an isolated demo with realistic sample trades. Edit freely. Your real workspace begins empty.',
-                'Add or edit a journal entry. Your dashboard, calendar and analytics update from the same data.',
+                mode === 'demo'
+                  ? 'This is an isolated demo with realistic sample trades. Edit freely. Your real workspace begins empty.'
+                  : 'Tradovia connects your plan, risk, journal and analytics in one repeatable trading process.',
+                'Journal keeps the setup, execution, chart and reflection together. The same data updates the whole workspace.',
+                'Write entry, exit and risk rules once, then attach that Playbook to each matching trade.',
                 'The risk calculator rounds position sizes down. Check your broker’s contract specifications before using the result.',
-                'Set weekly, monthly and yearly goals, add rules, and explore light mode, dark mode and Thai.',
+                'Compare outcomes with your process in Analytics, then open the source trades before changing your plan.',
               ][tour] ?? '',
               [
-                'นี่คือเดโมที่แยกจากข้อมูลจริง ลองแก้ไขได้เต็มที่ เวิร์กสเปซจริงจะเริ่มต้นด้วยข้อมูลว่าง',
-                'เพิ่มหรือแก้ไขบันทึก แล้วดูผลอัปเดตในภาพรวม ปฏิทิน และหน้าวิเคราะห์',
+                mode === 'demo'
+                  ? 'นี่คือเดโมที่แยกจากข้อมูลจริง ลองแก้ไขได้เต็มที่ เวิร์กสเปซจริงจะเริ่มต้นด้วยข้อมูลว่าง'
+                  : 'Tradovia เชื่อมแผน ความเสี่ยง บันทึก และการวิเคราะห์ให้เป็นกระบวนการเทรดเดียวที่ทำซ้ำได้',
+                'Journal เก็บ Setup ข้อมูลเข้าเทรด ภาพกราฟ และบททบทวนไว้ด้วยกัน ข้อมูลชุดเดียวกันจะอัปเดตทั้งเวิร์กสเปซ',
+                'เขียนกฎเข้า ออก และความเสี่ยงครั้งเดียว แล้วผูก Playbook เข้ากับเทรดที่ใช้แผนนั้น',
                 'เครื่องคำนวณปัดขนาดสัญญาลง ตรวจสอบสเปกสัญญาของโบรกเกอร์ก่อนนำไปใช้',
-                'ตั้งเป้าหมาย เพิ่มกฎ และลองเปลี่ยนธีมกับภาษาได้ตามใจ',
+                'เทียบผลลัพธ์กับกระบวนการใน Analytics แล้วเปิดดูรายการต้นทางก่อนตัดสินใจเปลี่ยนแผน',
               ][tour] ?? '',
             )}
           </DialogDescription>
-          <button
-            className="button ink"
-            onClick={() => {
-              if (tour === 3) {
+          <div className="tour-actions">
+            <button
+              className="text-button tour-skip"
+              onClick={() => {
+                try {
+                  localStorage.setItem(
+                    `tradovia.onboarding.v2.${mode}`,
+                    'skipped',
+                  );
+                } catch {
+                  /* Session-only dismissal. */
+                }
                 setTour(-1);
-                navigate('goals');
-              } else {
-                setTour(tour + 1);
-                navigate(['journal', 'risk', 'goals'][tour]);
-              }
-            }}
-          >
-            {t(
-              tour === 3 ? 'Start exploring' : 'Continue',
-              tour === 3 ? 'เริ่มสำรวจ' : 'ถัดไป',
-            )}
-            <ArrowRight size={16} />
-          </button>
+              }}
+            >
+              {t('Skip tour', 'ข้ามทัวร์')}
+            </button>
+            <div>
+              {tour > 0 && (
+                <button
+                  className="button ghost"
+                  onClick={() => {
+                    const previous = tour - 1;
+                    setTour(previous);
+                    navigate(
+                      ['overview', 'journal', 'playbook', 'risk'][previous],
+                    );
+                  }}
+                >
+                  <ChevronLeft size={16} />
+                  {t('Back', 'ย้อนกลับ')}
+                </button>
+              )}
+              <button
+                className="button ink"
+                onClick={() => {
+                  if (tour === 4) {
+                    try {
+                      localStorage.setItem(
+                        `tradovia.onboarding.v2.${mode}`,
+                        'complete',
+                      );
+                    } catch {
+                      /* Session-only completion. */
+                    }
+                    setTour(-1);
+                    navigate('overview');
+                  } else {
+                    const next = tour + 1;
+                    setTour(next);
+                    navigate(
+                      ['journal', 'playbook', 'risk', 'analytics'][tour],
+                    );
+                  }
+                }}
+              >
+                {t(
+                  tour === 4 ? 'Open workspace' : 'Continue',
+                  tour === 4 ? 'เปิดเวิร์กสเปซ' : 'ถัดไป',
+                )}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </SidebarProvider>

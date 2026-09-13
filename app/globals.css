@@ -2055,6 +2055,51 @@ button:disabled {
 .tour-dialog [data-slot='dialog-description'] {
   line-height: 1.8;
 }
+.tour-progress-row,
+.guide-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tour-progress-row > span:last-child,
+.guide-progress-row > span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.tour-progress,
+.guide-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--muted));
+}
+.tour-progress {
+  margin-top: 10px;
+}
+.tour-progress i,
+.guide-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--positive);
+  transition: width 280ms ease;
+}
+.tour-actions,
+.tour-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tour-actions {
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.tour-skip {
+  color: var(--muted-foreground);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .error-banner {
   display: flex;
   justify-content: space-between;
@@ -2645,6 +2690,9 @@ html[lang='th'] .hero h1 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
+.workspace-guide-grid.guide-flow-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .workspace-guide-grid h3 {
   font-size: 15px;
   font-weight: 600;
@@ -2658,6 +2706,20 @@ html[lang='th'] .hero h1 {
   border: 1px solid var(--border);
   border-radius: 12px;
   text-align: left;
+  background: color-mix(in srgb, var(--card) 96%, var(--positive));
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.guide-task:hover,
+.guide-task:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--positive) 45%, var(--border));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.guide-task.complete {
+  background: color-mix(in srgb, var(--positive) 7%, var(--card));
 }
 .guide-task span {
   color: var(--positive);
@@ -2678,10 +2740,63 @@ html[lang='th'] .hero h1 {
   border-top: 1px solid var(--border);
   padding-top: 16px;
 }
+.guide-progress-row {
+  margin: 0 0 16px;
+}
+.guide-progress {
+  width: min(260px, 55%);
+}
+.context-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: -4px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--positive) 24%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--positive) 5%, var(--card));
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.context-note svg {
+  flex: 0 0 auto;
+  color: var(--positive);
+  margin-top: 2px;
+}
+.context-note p {
+  margin: 0;
+}
+.context-note strong {
+  display: block;
+  color: var(--foreground);
+  margin-bottom: 2px;
+}
 @media (max-width: 760px) {
   .workspace-guide-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+  .workspace-guide-grid.guide-flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tour-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .tour-actions > div,
+  .tour-actions .button {
+    flex: 1;
+  }
+  .tour-actions .button {
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-progress i,
+  .guide-progress i,
+  .guide-task {
+    transition: none;
   }
 }
 

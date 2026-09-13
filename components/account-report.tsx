@@ -374,7 +374,7 @@ export default function AccountReport({
               </strong>
             </div>
             <div className="report-chart">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart
                   data={curve}
                   margin={{ top: 16, right: 12, bottom: 0, left: 0 }}

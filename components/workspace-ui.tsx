@@ -171,6 +171,100 @@ export function Equity({
     </div>
   );
 }
+export function OutcomeDonut({
+  trades,
+  t,
+  onReview,
+}: {
+  trades: Trade[];
+  t: Translate;
+  onReview?: (label: string, trades: Trade[]) => void;
+}) {
+  const closed = trades.filter((trade) => trade.status === 'CLOSED');
+  const outcomes = [
+    {
+      key: 'win',
+      label: t('Winning trades', 'ไม้ที่ชนะ'),
+      rows: closed.filter((trade) => net(trade) > 0),
+    },
+    {
+      key: 'loss',
+      label: t('Losing trades', 'ไม้ที่แพ้'),
+      rows: closed.filter((trade) => net(trade) < 0),
+    },
+    {
+      key: 'flat',
+      label: t('Break-even', 'เสมอตัว'),
+      rows: closed.filter((trade) => net(trade) === 0),
+    },
+  ];
+  const percentages = outcomes.map((outcome) =>
+    closed.length ? (outcome.rows.length / closed.length) * 100 : 0,
+  );
+  const winEnd = percentages[0];
+  const lossEnd = winEnd + percentages[1];
+  const chartLabel = outcomes
+    .map(
+      (outcome, index) =>
+        `${outcome.label} ${outcome.rows.length}, ${percentages[index].toFixed(0)}%`,
+    )
+    .join('. ');
+  const background = closed.length
+    ? `conic-gradient(var(--positive) 0 ${winEnd}%, var(--negative) ${winEnd}% ${lossEnd}%, var(--muted-foreground) ${lossEnd}% 100%)`
+    : 'conic-gradient(var(--border) 0 100%)';
+
+  return (
+    <section className="panel outcome-panel">
+      <div>
+        <span className="overline">{t('OUTCOMES', 'ผลลัพธ์')}</span>
+        <h2>{t('Winning, losing, and break-even', 'สัดส่วนชนะ แพ้ และเสมอตัว')}</h2>
+      </div>
+      <div className="outcome-content">
+        <div
+          className="outcome-donut"
+          style={{ background }}
+          role="img"
+          aria-label={chartLabel}
+        >
+          <div className="outcome-donut-center">
+            <strong>{closed.length}</strong>
+            <span>{t('closed trades', 'ไม้ที่ปิดแล้ว')}</span>
+          </div>
+        </div>
+        <div className="outcome-legend">
+          {outcomes.map((outcome, index) => (
+            <button
+              type="button"
+              key={outcome.key}
+              className={`outcome-row ${outcome.key}`}
+              disabled={!outcome.rows.length || !onReview}
+              onClick={() => onReview?.(outcome.label, outcome.rows)}
+              aria-label={t(
+                `View ${outcome.label.toLowerCase()}`,
+                `ดูรายการ${outcome.label}`,
+              )}
+            >
+              <i aria-hidden="true" />
+              <span>
+                <b>{outcome.label}</b>
+                <small>
+                  {outcome.rows.length} {t('trades', 'ไม้')}
+                </small>
+              </span>
+              <strong>{percentages[index].toFixed(0)}%</strong>
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="outcome-note">
+        {t(
+          'Closed trades only. Select an outcome to review the trades behind it.',
+          'เฉพาะไม้ที่ปิดแล้ว เลือกผลลัพธ์เพื่อดูรายการเทรดต้นทาง',
+        )}
+      </p>
+    </section>
+  );
+}
 export function TradeTable({
   trades,
   onView,

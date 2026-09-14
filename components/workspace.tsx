@@ -76,6 +76,7 @@ import {
   Field,
   Metric,
   Equity,
+  OutcomeDonut,
   TradeTable,
   Breakdown,
   type Translate,
@@ -121,6 +122,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       label: string;
       field?: 'setup' | 'symbol';
       value?: string;
+      ids?: string[];
     } | null>(null),
     [confirm, setConfirm] = useState<string | null>(null),
     [tour, setTour] = useState(-1),
@@ -236,6 +238,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
   const reviewRows = trades.filter(
     (tr) =>
       tr.status === 'CLOSED' &&
+      (!review?.ids || review.ids.includes(tr.id)) &&
       (!review?.field || tr[review.field] === review.value),
   );
   const openReview = (
@@ -247,6 +250,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
       label,
       field,
       value: field ? (rows[0]?.[field] ?? '') : undefined,
+      ids: rows.map((row) => row.id),
     });
   const addTrade = () => {
     if (!data?.accounts.length) {
@@ -833,7 +837,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
             <TradingCalendar trades={trades} t={t} onView={setDetail} />
           )}
           {page === 'analytics' && (
-            <div className="daily-options" style={{ marginBottom: 20 }}>
+            <div className="daily-options analytics-tabs">
               <button
                 aria-pressed={analysisTab === 'summary'}
                 onClick={() => setAnalysisTab('summary')}
@@ -870,8 +874,8 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
             <DeepAnalysis trades={trades} t={t} onView={setDetail} />
           )}
           {page === 'analytics' && analysisTab === 'summary' && (
-            <>
-              <div className="metrics-grid">
+            <div className="analytics-summary">
+              <div className="metrics-grid analytics-metrics">
                 <Metric
                   label={t('Expectancy', 'ผลตอบแทนคาดหวังต่อไม้')}
                   value={money(s.expectancy)}
@@ -906,7 +910,14 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                   )}
                 />
               </div>
-              <Equity trades={trades} capital={capital} t={t} />
+              <div className="analytics-story-grid">
+                <Equity trades={trades} capital={capital} t={t} />
+                <OutcomeDonut
+                  trades={trades}
+                  t={t}
+                  onReview={(label, rows) => openReview(label, rows)}
+                />
+              </div>
               <div className="two-col">
                 <Breakdown
                   trades={trades.filter((tr) => tr.status === 'CLOSED')}
@@ -936,7 +947,7 @@ export default function Workspace({ mode }: { mode: 'demo' | 'real' }) {
                 )}{' '}
                 <ArrowUpRight size={16} />
               </button>
-            </>
+            </div>
           )}
           {page === 'risk' && (
             <RiskCalculator capital={s.equity || 10000} t={t} />

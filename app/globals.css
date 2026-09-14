@@ -1728,6 +1728,9 @@ button:disabled {
   padding: 16px;
   font-size: 13px;
 }
+.risk-mobile-result {
+  display: none;
+}
 .risk-contract-summary p {
   margin-top: 8px;
   color: var(--muted-foreground);
@@ -3371,6 +3374,24 @@ html[lang='th'] .hero h1 {
   border-radius: 10px;
   width: 100%;
 }
+.playbook-editor-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.playbook-editor-heading h3 {
+  margin-bottom: 0;
+}
+.playbook-editor-close {
+  display: none;
+}
+.playbook-card > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
 .daily-card textarea {
   min-height: 90px;
   margin-top: 12px;
@@ -3416,9 +3437,129 @@ html[lang='th'] .hero h1 {
   .daily-card {
     padding: 22px;
   }
+  .playbook-panel > .section-heading {
+    align-items: flex-start;
+  }
+  .playbook-panel > .section-heading .button {
+    min-height: 44px;
+    flex: 0 0 auto;
+  }
+  .playbook-editor {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    padding: max(20px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right))
+      max(18px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    border-radius: 0;
+    background: var(--background);
+  }
+  .playbook-editor-heading {
+    position: sticky;
+    top: calc(-1 * max(20px, env(safe-area-inset-top)));
+    z-index: 2;
+    margin: calc(-1 * max(20px, env(safe-area-inset-top)))
+      calc(-1 * max(18px, env(safe-area-inset-right))) 8px
+      calc(-1 * max(18px, env(safe-area-inset-left)));
+    padding: max(20px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right)) 14px
+      max(18px, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 94%, transparent);
+    backdrop-filter: blur(14px);
+  }
+  .playbook-editor-heading h3 {
+    margin-top: 8px;
+  }
+  .playbook-editor-close {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+  .playbook-editor .daily-field {
+    gap: 8px;
+    margin: 18px 0;
+  }
+  .playbook-editor .daily-field input,
+  .playbook-editor .daily-field textarea {
+    margin-top: 0;
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .playbook-editor .daily-field textarea {
+    min-height: 104px;
+  }
+  .playbook-editor-actions {
+    position: sticky;
+    bottom: calc(-1 * max(18px, env(safe-area-inset-bottom)));
+    z-index: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin: 24px calc(-1 * max(18px, env(safe-area-inset-right)))
+      calc(-1 * max(18px, env(safe-area-inset-bottom)))
+      calc(-1 * max(18px, env(safe-area-inset-left)));
+    padding: 13px max(18px, env(safe-area-inset-right))
+      calc(14px + env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+    border-top: 1px solid var(--border);
+    background: var(--background);
+    box-shadow: 0 -12px 28px
+      color-mix(in srgb, var(--foreground) 7%, transparent);
+  }
+  .playbook-editor-actions .button {
+    min-height: 48px;
+    justify-content: center;
+  }
+  .playbook-card {
+    padding: 18px;
+    border-radius: 14px;
+  }
   .daily-header .actions {
     flex-wrap: wrap;
     font-size: 13px;
+  }
+  .risk-mobile-result {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+    border: 1px solid color-mix(in srgb, var(--positive) 26%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--positive) 6%, var(--card));
+  }
+  .risk-mobile-result > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 4px;
+  }
+  .risk-mobile-result > div + div {
+    padding-left: 10px;
+    border-left: 1px solid var(--border);
+  }
+  .risk-mobile-result span,
+  .risk-mobile-result small {
+    color: var(--muted-foreground);
+    font-size: 10px;
+  }
+  .risk-mobile-result strong {
+    font-size: 21px;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+  }
+  .risk-mobile-result strong small {
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .risk-mobile-result b {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
   }
 }
 

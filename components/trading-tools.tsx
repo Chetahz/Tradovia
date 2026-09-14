@@ -449,6 +449,28 @@ export function RiskCalculator({
               onChange={(e) => set(k, Number(e.target.value))}
             />
           ))}
+          <div className="full risk-mobile-result" aria-live="polite">
+            <div>
+              <span>{t('Position size', 'ขนาดสัญญา')}</span>
+              <strong>
+                {result
+                  ? result.quantity.toLocaleString('en-US', {
+                      maximumFractionDigits: 8,
+                    })
+                  : '—'}{' '}
+                <small>{assets[asset].unit}</small>
+              </strong>
+            </div>
+            <div>
+              <span>{t('Planned risk', 'ความเสี่ยงตามแผน')}</span>
+              <b className="positive">
+                {result ? money(result.estimatedRisk) : '—'}
+              </b>
+              <small>
+                {t('Budget', 'งบ')} {result ? money(result.budget) : '—'}
+              </small>
+            </div>
+          </div>
           <div className="full risk-contract-summary">
             <strong>
               {custom

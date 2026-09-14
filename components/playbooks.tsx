@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { Playbook, Trade } from '@/lib/domain';
 import { money, net } from '@/lib/domain';
 import type { Translate } from './workspace-ui';
@@ -41,7 +42,7 @@ export default function Playbooks({
   };
   const rows = trades.filter((tr) => tr.playbook?.id === selected);
   return (
-    <section className="panel">
+    <section className="panel playbook-panel">
       <div className="section-heading">
         <div>
           <h2>Playbook</h2>
@@ -66,15 +67,30 @@ export default function Playbooks({
       </label>
       {edit && (
         <form
-          className="daily-card"
+          className="daily-card playbook-editor"
           onSubmit={(e) => {
             e.preventDefault();
             void submit(edit);
           }}
         >
-          <h3>
-            {edit.id ? t('Edit plan', 'แก้ไขแผน') : t('New plan', 'แผนใหม่')}
-          </h3>
+          <div className="playbook-editor-heading">
+            <div>
+              <span className="overline">
+                {t('YOUR TRADING PROCESS', 'กระบวนการเทรดของคุณ')}
+              </span>
+              <h3>
+                {edit.id ? t('Edit plan', 'แก้ไขแผน') : t('New plan', 'แผนใหม่')}
+              </h3>
+            </div>
+            <button
+              type="button"
+              className="icon-button playbook-editor-close"
+              aria-label={t('Close editor', 'ปิดหน้าสร้างแผน')}
+              onClick={() => setEdit(null)}
+            >
+              <X size={20} />
+            </button>
+          </div>
           {(
             ['name', 'technique', 'entry', 'exit', 'risk', 'checklist'] as const
           ).map((field, i) => (
@@ -89,15 +105,24 @@ export default function Playbooks({
                   t('Checklist (one item per line)', 'Checklist (ข้อละบรรทัด)'),
                 ][i]
               }
-              <textarea
-                required={field === 'name' || field === 'entry'}
-                maxLength={i < 2 ? 120 : 4000}
-                value={edit[field]}
-                onChange={(e) => setEdit({ ...edit, [field]: e.target.value })}
-              />
+              {i < 2 ? (
+                <input
+                  required={field === 'name'}
+                  maxLength={120}
+                  value={edit[field]}
+                  onChange={(e) => setEdit({ ...edit, [field]: e.target.value })}
+                />
+              ) : (
+                <textarea
+                  required={field === 'entry'}
+                  maxLength={4000}
+                  value={edit[field]}
+                  onChange={(e) => setEdit({ ...edit, [field]: e.target.value })}
+                />
+              )}
             </label>
           ))}
-          <div className="actions">
+          <div className="actions playbook-editor-actions">
             <button disabled={busy} className="button ink">
               {t('Save plan', 'บันทึกแผน')}
             </button>
@@ -111,11 +136,11 @@ export default function Playbooks({
           </div>
         </form>
       )}
-      <div className="workspace-guide-grid">
+      <div className="workspace-guide-grid playbook-grid">
         {plans
           .filter((p) => archived || !p.archived)
           .map((p) => (
-            <article className="daily-card" key={p.id}>
+            <article className="daily-card playbook-card" key={p.id}>
               <small>
                 {p.technique || t('Your strategy', 'กลยุทธ์ของคุณ')} · v{p.version}
                 {p.archived ? ' · Archived' : ''}

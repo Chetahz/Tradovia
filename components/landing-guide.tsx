@@ -1,40 +1,51 @@
 import Link from 'next/link';
 import {
   ArrowUpRight,
-  BookOpen,
   ShieldCheck,
   ChartNoAxesCombined,
+  ListChecks,
+  Upload,
 } from 'lucide-react';
 
 export function LandingGuide({ th }: { th: boolean }) {
   const t = (en: string, thai: string) => (th ? thai : en);
   const steps = [
     {
-      Icon: ShieldCheck,
-      title: t('Plan your risk.', 'วางแผนความเสี่ยง'),
+      Icon: ListChecks,
+      title: t('Build your Playbook.', 'สร้าง Playbook ของคุณ'),
       description: t(
-        'Choose your risk budget and check your position size before the entry.',
-        'กำหนดงบความเสี่ยงและตรวจขนาดการเทรดก่อนเข้าไม้',
+        'Turn your setup and rules into a checklist you can follow and measure.',
+        'เปลี่ยน Setup และกฎของคุณให้เป็นเช็กลิสต์ที่ทำตามและวัดผลได้',
+      ),
+      link: '/demo#playbook',
+      action: t('Explore Playbook', 'ดู Playbook'),
+    },
+    {
+      Icon: ShieldCheck,
+      title: t('Plan the risk.', 'วางแผนความเสี่ยง'),
+      description: t(
+        'Check position size and risk before entry so every trade starts with a clear boundary.',
+        'ตรวจขนาดสัญญาและความเสี่ยงก่อนเข้า เพื่อให้ทุกไม้เริ่มด้วยขอบเขตที่ชัดเจน',
       ),
       link: '/demo#risk',
       action: t('Try the calculator', 'ลองคำนวณความเสี่ยง'),
     },
     {
-      Icon: BookOpen,
-      title: t('Capture the trade.', 'บันทึกสิ่งที่เกิดขึ้น'),
+      Icon: Upload,
+      title: t('Record or import.', 'บันทึกหรือนำเข้า'),
       description: t(
-        'Keep execution, fees, chart images and the reason behind your decision together.',
-        'เก็บข้อมูลเข้าเทรด ค่าธรรมเนียม ภาพกราฟ และเหตุผลตัดสินใจไว้ด้วยกัน',
+        'Add the trade yourself or preview an MT5 report before bringing its closed positions into your journal.',
+        'เพิ่มเทรดด้วยตัวเอง หรือตรวจรายงาน MT5 ก่อนนำรายการที่ปิดแล้วเข้าสู่ Journal',
       ),
       link: '/demo#journal',
       action: t('Explore the journal', 'เปิดบันทึกการเทรด'),
     },
     {
       Icon: ChartNoAxesCombined,
-      title: t('Learn from your history.', 'ทบทวนจากข้อมูลของคุณ'),
+      title: t('Review and improve.', 'ทบทวนแล้วพัฒนา'),
       description: t(
-        'Open the trades behind each breakdown. See the context behind the numbers.',
-        'กดจากสถิติไปดูรายการเทรดต้นทาง เพื่อเข้าใจบริบทเบื้องหลังตัวเลข',
+        'Compare your process with the outcome, then open the exact trades behind every pattern.',
+        'เทียบกระบวนการกับผลลัพธ์ แล้วเปิดดูเทรดจริงเบื้องหลังรูปแบบที่พบ',
       ),
       link: '/demo#analytics',
       action: t('See the analysis', 'ดูผลวิเคราะห์'),
@@ -48,8 +59,8 @@ export function LandingGuide({ th }: { th: boolean }) {
       <h2>{t('From intention to insight.', 'จากแผน สู่ความเข้าใจ')}</h2>
       <p className="section-intro">
         {t(
-          'Three connected steps. One place to keep your process.',
-          'สามขั้นตอนที่เชื่อมถึงกัน ในพื้นที่เดียว',
+          'Four connected steps. One place to keep your process.',
+          'สี่ขั้นตอนที่เชื่อมถึงกัน ในพื้นที่เดียว',
         )}
       </p>
       <div className="guide-grid">
@@ -78,8 +89,8 @@ export function LandingFAQ({ th }: { th: boolean }) {
     [
       t('Do I need to connect a broker?', 'ต้องเชื่อมโบรกเกอร์ก่อนหรือไม่?'),
       t(
-        'No. You can record trades manually and explore risk tools and analytics. Automatic broker sync is not available in this preview; supported connections and account limits will be confirmed later.',
-        'ไม่จำเป็น คุณบันทึกเทรดด้วยตนเองและลองใช้เครื่องมือความเสี่ยงกับการวิเคราะห์ได้ พรีวิวนี้ยังไม่มีการซิงก์โบรกเกอร์อัตโนมัติ โดยจะยืนยันบริการที่รองรับและจำนวนบัญชีภายหลัง',
+        'No. Record trades manually or import closed positions from an MT5 XLSX or HTML report. Automatic broker sync is not available in this preview; supported connections and account limits will be confirmed later.',
+        'ไม่จำเป็น คุณบันทึกเทรดด้วยตนเอง หรือนำเข้า Positions ที่ปิดแล้วจากรายงาน MT5 แบบ XLSX หรือ HTML ได้ พรีวิวนี้ยังไม่มีการซิงก์โบรกเกอร์อัตโนมัติ โดยจะยืนยันบริการที่รองรับและจำนวนบัญชีภายหลัง',
       ),
     ],
     [
@@ -95,8 +106,8 @@ export function LandingFAQ({ th }: { th: boolean }) {
     [
       t('Can I use Tradovia on my phone?', 'ใช้ Tradovia บนมือถือได้ไหม?'),
       t(
-        'Yes. Open the website in your phone’s browser to explore the journal, calendar and risk tools. No app installation is required.',
-        'ได้ เปิดเว็บไซต์ผ่านเบราว์เซอร์บนมือถือเพื่อลองใช้บันทึกการเทรด ปฏิทิน และเครื่องมือความเสี่ยง โดยไม่ต้องติดตั้งแอป',
+        'Yes. The journal, Playbook, calendar, analytics and risk tools adapt to mobile screens. You can also add the website to your home screen; no App Store installation is required.',
+        'ได้ ทั้ง Journal, Playbook, ปฏิทิน การวิเคราะห์ และเครื่องมือความเสี่ยงปรับตามหน้าจอมือถือ และเพิ่มเว็บไซต์ไว้บนหน้าจอหลักได้โดยไม่ต้องติดตั้งผ่าน App Store',
       ),
     ],
     [
@@ -112,8 +123,15 @@ export function LandingFAQ({ th }: { th: boolean }) {
     [
       t('Can I import or export my trades?', 'นำเข้าและส่งออกข้อมูลได้ไหม?'),
       t(
-        'You can export journal entries as CSV. Trade entry is currently manual; importing broker files and automatic sync will be added in a later phase.',
-        'คุณส่งออกรายการใน Journal เป็น CSV ได้ ปัจจุบันเพิ่มเทรดด้วยตนเอง ส่วนการนำเข้าไฟล์จากโบรกเกอร์และการซิงก์อัตโนมัติจะพัฒนาในลำดับถัดไป',
+        'Yes. Preview and import closed positions from MT5 account-history reports in XLSX or HTML format, or use the Tradovia CSV template. Duplicate rows are checked before confirmation, and journal entries can be exported as CSV. Automatic broker sync is planned for a later phase.',
+        'ได้ คุณตรวจและนำเข้า Positions ที่ปิดแล้วจากรายงานประวัติบัญชี MT5 แบบ XLSX หรือ HTML รวมถึงแม่แบบ CSV ของ Tradovia ระบบจะตรวจรายการซ้ำก่อนยืนยัน และส่งออก Journal เป็น CSV ได้ ส่วนการซิงก์โบรกเกอร์อัตโนมัติจะพัฒนาในระยะถัดไป',
+      ),
+    ],
+    [
+      t('What can I learn from Analytics?', 'Analytics ช่วยให้เรียนรู้อะไรได้บ้าง?'),
+      t(
+        'Start with equity, expectancy and win/loss outcomes, then compare Playbooks, sessions, instruments, risk and execution behavior in Deep Analysis. Every breakdown links back to its source trades so you can verify the context behind the number.',
+        'เริ่มจากมูลค่าพอร์ต Expectancy และสัดส่วนชนะ–แพ้ แล้วเปรียบเทียบ Playbook ช่วงเวลา สินทรัพย์ ความเสี่ยง และพฤติกรรมการเทรดใน Deep Analysis โดยทุกผลวิเคราะห์เปิดกลับไปดูรายการเทรดต้นทางได้',
       ),
     ],
     [

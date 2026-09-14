@@ -4,8 +4,9 @@ import {
   ArrowUpRight,
   ArrowRight,
   BookOpen,
-  ShieldCheck,
   ChartNoAxesCombined,
+  Images,
+  Upload,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -111,8 +112,8 @@ export default function Home() {
         </div>
         <div className="hero-note">
           {t(
-            'Manual journaling, always. No broker connection required.',
-            'บันทึกการเทรดได้เสมอ โดยไม่ต้องเชื่อมต่อโบรกเกอร์',
+            'Journal manually or import an MT5 report. No broker connection required.',
+            'บันทึกเองหรือนำเข้ารายงาน MT5 ได้ โดยไม่ต้องเชื่อมต่อโบรกเกอร์',
           )}
         </div>
         <div id="workspace" className="product-preview">
@@ -125,9 +126,9 @@ export default function Home() {
             {[
               t('Overview', 'ภาพรวม'),
               t('Trade Journal', 'บันทึกการเทรด'),
-              t('Trading Calendar', 'ปฏิทินการเทรด'),
+              t('Playbook', 'แผนการเทรด'),
               t('Analytics', 'วิเคราะห์ผล'),
-              t('Risk Center', 'บริหารความเสี่ยง'),
+              t('Trading Calendar', 'ปฏิทินการเทรด'),
             ].map((x, i) => (
               <div className={i === 0 ? 'selected' : ''} key={x}>
                 <ChartNoAxesCombined size={15} />
@@ -213,6 +214,22 @@ export default function Home() {
                 ))}
               </div>
             </div>
+            <div
+              className="preview-workflow"
+              aria-label={t('Tradovia workflow', 'ขั้นตอนการใช้งาน Tradovia')}
+            >
+              {[
+                ['01', t('Plan', 'วางแผน')],
+                ['02', t('Record', 'บันทึก')],
+                ['03', t('Review', 'ทบทวน')],
+                ['04', t('Improve', 'พัฒนา')],
+              ].map(([number, label]) => (
+                <span key={number}>
+                  <small>{number}</small>
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -235,33 +252,50 @@ export default function Home() {
           {[
             {
               icon: BookOpen,
-              en: 'Every trade, understood.',
-              th: 'เข้าใจทุกการเทรด',
-              desc: 'Capture your execution, screenshots and thinking. Find what works in your own history.',
-              td: 'เก็บรายละเอียด ภาพกราฟ และแนวคิด ค้นหาสิ่งที่ได้ผลจากประวัติของคุณ',
+              en: 'Turn rules into a Playbook.',
+              th: 'เปลี่ยนกฎให้เป็น Playbook',
+              desc: 'Build reusable entry, exit and risk checklists. Attach the right version to every trade.',
+              td: 'สร้างเช็กลิสต์เข้า ออก และความเสี่ยง แล้วผูกเวอร์ชันของแผนกับทุกการเทรด',
+              link: '/demo#playbook',
+              label: t('PLAN', 'วางแผน'),
             },
             {
-              icon: ShieldCheck,
-              en: 'Discipline, by design.',
-              th: 'สร้างวินัยอย่างเป็นระบบ',
-              desc: 'Size positions around your risk. Set rules and goals that keep your process grounded.',
-              td: 'คำนวณขนาดสัญญาตามความเสี่ยง พร้อมกฎและเป้าหมายที่ช่วยรักษาวินัย',
+              icon: Upload,
+              en: 'Bring trades in, your way.',
+              th: 'นำเข้าข้อมูลในแบบของคุณ',
+              desc: 'Record manually or preview an MT5 XLSX, HTML or Tradovia CSV before importing.',
+              td: 'บันทึกเอง หรือตรวจรายงาน MT5 แบบ XLSX, HTML และ CSV ก่อนยืนยันนำเข้า',
+              link: '/demo#journal',
+              label: t('CAPTURE', 'บันทึก'),
+            },
+            {
+              icon: Images,
+              en: 'Review the chart, not just the number.',
+              th: 'ทบทวนกราฟ มากกว่าดูแค่ตัวเลข',
+              desc: 'Keep before-and-after chart images together. Browse the gallery and return to the source trade.',
+              td: 'เก็บภาพกราฟก่อนเข้าและหลังจบไว้ด้วยกัน เปิดดูในแกลเลอรีและย้อนกลับไปยังเทรดต้นทาง',
+              link: '/demo#journal',
+              label: t('REVIEW', 'ทบทวน'),
             },
             {
               icon: ChartNoAxesCombined,
-              en: 'Your process, in perspective.',
-              th: 'เห็นภาพรวมของกระบวนการ',
-              desc: 'Connect your calendar, portfolio and analytics. One trade record, one consistent picture.',
-              td: 'เชื่อมปฏิทิน พอร์ต และผลวิเคราะห์ ด้วยข้อมูลชุดเดียวกัน',
+              en: 'See the behavior behind results.',
+              th: 'เห็นพฤติกรรมที่อยู่เบื้องหลังผลลัพธ์',
+              desc: 'Compare Playbooks, sessions, risk and outcomes. Open the exact trades behind every insight.',
+              td: 'เปรียบเทียบ Playbook ช่วงเวลา ความเสี่ยง และผลลัพธ์ พร้อมเปิดดูเทรดจริงเบื้องหลังทุก Insight',
+              link: '/demo#analytics',
+              label: t('IMPROVE', 'พัฒนา'),
             },
           ].map((x, i) => (
             <article className="feature-card" key={x.en}>
-              <span className="feature-number">0{i + 1}</span>
+              <span className="feature-number">
+                0{i + 1} · {x.label}
+              </span>
               <x.icon size={34} strokeWidth={1.3} />
               <h3>{t(x.en, x.th)}</h3>
               <p>{t(x.desc, x.td)}</p>
-              <Link prefetch={false} href="/demo">
-                {t('Explore workspace', 'สำรวจเวิร์กสเปซ')}
+              <Link prefetch={false} href={x.link}>
+                {t('See it in the demo', 'ดูในเดโม')}
                 <ArrowUpRight size={18} />
               </Link>
             </article>

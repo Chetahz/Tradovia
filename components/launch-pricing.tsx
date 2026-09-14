@@ -28,18 +28,17 @@ export default function LaunchPricing({ th }: { th: boolean }) {
           'เริ่มใช้ฟรี แล้วสร้างระบบให้เป็นส่วนหนึ่งของทุกวัน',
         )}
       </p>
-      <div
-        className="billing-switch"
-        role="group"
-        aria-label={t('Billing period', 'รอบการชำระเงิน')}
-      >
+      <fieldset className="billing-switch">
+        <legend className="sr-only">
+          {t('Billing period', 'รอบการชำระเงิน')}
+        </legend>
         <button aria-pressed={!annual} onClick={() => setAnnual(false)}>
           {t('Monthly', 'รายเดือน')}
         </button>
         <button aria-pressed={annual} onClick={() => setAnnual(true)}>
           {t('Yearly', 'รายปี')} <span>{t('Save 16.7%', 'ประหยัด 16.7%')}</span>
         </button>
-      </div>
+      </fieldset>
       <div className="currency-controls">
         <label htmlFor="pricing-currency">{t('Currency', 'สกุลเงิน')}</label>
         <select
@@ -81,7 +80,7 @@ export default function LaunchPricing({ th }: { th: boolean }) {
           <ul>
             {[
               t('One portfolio', '1 พอร์ต'),
-              t('Manual trade journal', 'บันทึกการเทรดด้วยตนเอง'),
+              t('Manual journal & Playbook', 'Journal และ Playbook แบบบันทึกเอง'),
               t('Calendar & core statistics', 'ปฏิทินและสถิติพื้นฐาน'),
               t('Position sizing tools', 'เครื่องมือคำนวณขนาดการเทรด'),
             ].map((x) => (
@@ -120,11 +119,15 @@ export default function LaunchPricing({ th }: { th: boolean }) {
             {[
               t('Everything in Free', 'ทุกฟีเจอร์ของ Free'),
               t('Multiple portfolios', 'จัดการหลายพอร์ต'),
+              t('MT5 report & CSV import', 'นำเข้ารายงาน MT5 และ CSV'),
               t(
                 'Deeper reviews & strategy insights',
                 'ทบทวนและวิเคราะห์กลยุทธ์เชิงลึก',
               ),
-              t('Cloud storage at launch', 'เก็บข้อมูลบนคลาวด์เมื่อเปิดบริการ'),
+              t(
+                'Trade Gallery & cloud storage at launch',
+                'Trade Gallery และพื้นที่คลาวด์เมื่อเปิดบริการ',
+              ),
             ].map((x) => (
               <li key={x}>
                 <Check size={15} />
@@ -136,8 +139,8 @@ export default function LaunchPricing({ th }: { th: boolean }) {
       </div>
       <p className="pricing-note">
         {t(
-          `Proposed launch pricing in ${currency}. Preview access is free; no payment is collected. Pro features and usage limits will be confirmed before subscriptions open. AI and broker sync are not included in this preview.`,
-          `ราคาเสนอสำหรับเปิดตัวในสกุล ${currency} พรีวิวใช้ฟรี ไม่มีการเรียกเก็บเงิน ฟีเจอร์และขีดจำกัดของ Pro จะยืนยันก่อนเปิดสมัครแบบชำระเงิน พรีวิวนี้ยังไม่รวม AI และการซิงก์โบรกเกอร์`,
+          `Proposed launch pricing in ${currency}. Preview access is free; no payment is collected. Pro features and usage limits will be confirmed before subscriptions open. AI and automatic broker sync are not included in this preview.`,
+          `ราคาเสนอสำหรับเปิดตัวในสกุล ${currency} พรีวิวใช้ฟรี ไม่มีการเรียกเก็บเงิน ฟีเจอร์และขีดจำกัดของ Pro จะยืนยันก่อนเปิดสมัครแบบชำระเงิน พรีวิวนี้ยังไม่รวม AI และการซิงก์โบรกเกอร์อัตโนมัติ`,
         )}
       </p>
     </section>

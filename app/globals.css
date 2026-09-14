@@ -1625,6 +1625,13 @@ button:disabled {
   color: var(--muted-foreground);
   font-size: 10px;
 }
+.weekly-result-period,
+.weekly-result-stats {
+  display: contents;
+}
+.weekly-result-period span {
+  display: none;
+}
 .weekly-result.positive-week {
   border-color: color-mix(in srgb, var(--positive) 24%, var(--border));
 }
@@ -2572,11 +2579,12 @@ button:disabled {
     justify-content: space-between;
   }
   .calendar-day {
-    min-height: 75px;
-    padding: 5px;
-    gap: 8px;
+    min-height: 78px;
+    padding: 7px 5px;
+    gap: 6px;
     border-radius: 6px;
     font-size: 10px;
+    overflow: hidden;
   }
   .calendar-weeks {
     gap: 3px;
@@ -2591,27 +2599,48 @@ button:disabled {
   .weekly-result {
     grid-column: 1 / -1;
     min-height: 0;
-    padding: 10px 12px;
+    padding: 11px 12px;
     display: grid;
-    grid-template-columns: minmax(110px, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    column-gap: 12px;
-    row-gap: 3px;
+    column-gap: 16px;
+    row-gap: 9px;
+    border-radius: 8px;
   }
-  .weekly-result small {
-    grid-column: 1;
+  .weekly-result-period,
+  .weekly-result-stats {
+    display: flex;
+    align-items: center;
+    min-width: 0;
   }
-  .weekly-result strong {
-    grid-column: 1;
-    font-size: 13px;
+  .weekly-result-period {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
-  .weekly-result span {
-    grid-row: 1 / span 2;
-    align-self: center;
+  .weekly-result-period span {
+    display: inline;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  .weekly-result > strong {
+    font-size: 15px;
+    text-align: right;
+  }
+  .weekly-result-stats {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    padding-top: 7px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  }
+  .weekly-result-stats span {
+    font-size: 10px;
   }
   .calendar-day strong {
-    font-size: 9px;
-    letter-spacing: -0.5px;
+    max-width: 100%;
+    font-size: clamp(7px, 2.3vw, 9px);
+    letter-spacing: -0.35px;
+    white-space: nowrap;
   }
   .calendar-day small {
     font-size: 9px;

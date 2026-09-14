@@ -203,6 +203,13 @@ export function TradingCalendar({
               );
               const wins = weekTrades.filter((trade) => net(trade) > 0).length;
               const complete = dateKey(week[6]) < dateKey(new Date());
+              const weekRange = `${week[0].toLocaleDateString(t('en-US', 'th-TH'), {
+                day: 'numeric',
+                month: 'short',
+              })} – ${week[6].toLocaleDateString(t('en-US', 'th-TH'), {
+                day: 'numeric',
+                month: 'short',
+              })}`;
               return (
                 <div
                   className={`calendar-week-row ${view === 'week' ? 'week-view' : ''}`}
@@ -233,20 +240,25 @@ export function TradingCalendar({
                   <div
                     className={`weekly-result ${weekPnl > 0 ? 'positive-week' : weekPnl < 0 ? 'negative-week' : ''}`}
                   >
-                    <small>
-                      {complete
-                        ? t('Week closed', 'ปิดสัปดาห์')
-                        : t('In progress', 'กำลังดำเนินอยู่')}
-                    </small>
+                    <div className="weekly-result-period">
+                      <small>
+                        {complete
+                          ? t('Week closed', 'ปิดสัปดาห์')
+                          : t('In progress', 'กำลังดำเนินอยู่')}
+                      </small>
+                      <span>{weekRange}</span>
+                    </div>
                     <strong>{money(weekPnl)}</strong>
-                    <span>
-                      {weekTrades.length} {t('trades', 'ไม้')}
-                    </span>
-                    <span>
-                      {weekTrades.length
-                        ? `${Math.round((wins / weekTrades.length) * 100)}% ${t('win', 'ชนะ')}`
-                        : `— ${t('win', 'ชนะ')}`}
-                    </span>
+                    <div className="weekly-result-stats">
+                      <span>
+                        {weekTrades.length} {t('trades', 'ไม้')}
+                      </span>
+                      <span>
+                        {weekTrades.length
+                          ? `${Math.round((wins / weekTrades.length) * 100)}% ${t('win', 'ชนะ')}`
+                          : `— ${t('win', 'ชนะ')}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

@@ -2650,6 +2650,8 @@ button:disabled {
     left: 0 !important;
     right: auto !important;
     bottom: auto !important;
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
     translate: 0 0 !important;
     transform: none !important;
     margin: 0 !important;
@@ -3613,6 +3615,8 @@ html[lang='th'] .hero h1 {
   left: 0 !important;
   right: auto !important;
   bottom: auto !important;
+  --tw-translate-x: 0px !important;
+  --tw-translate-y: 0px !important;
   width: 100vw;
   height: 100dvh;
   max-width: none;

@@ -44,6 +44,7 @@ export default defineConfig(async () => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import('@cloudflare/vite-plugin');
 
+  const publicBackend = process.env.TRADOVIA_PUBLIC_BACKEND === '1';
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
     server: isCodexSeatbeltSandbox
@@ -51,10 +52,10 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       vinext(),
-      sites(),
+      ...(!publicBackend ? [sites()] : []),
       cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-        config: localBindingConfig,
+        ...(publicBackend ? { configPath: 'wrangler.json' } : { config: localBindingConfig }),
       }),
     ],
   };

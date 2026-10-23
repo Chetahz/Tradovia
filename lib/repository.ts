@@ -1,4 +1,6 @@
 import { database } from '@/db';
+import { env } from 'cloudflare:workers';
+import { effectiveSubscription } from '@/lib/entitlements';
 import { demoData, emptyData, type WorkspaceData } from '@/lib/domain';
 export async function initialize(id: string, mode: 'demo' | 'real') {
   const db = database();
@@ -47,6 +49,27 @@ export async function initialize(id: string, mode: 'demo' | 'real') {
           prefix + t.accountId,
           t.date,
           JSON.stringify(t),
+      ),
+    );
+  for (const playbook of d.playbooks || [])
+    queries.push(
+      db
+        .prepare(
+          'INSERT OR IGNORE INTO playbooks(id,owner_id,payload) VALUES(?,?,?)',
+        )
+        .bind(prefix + playbook.id, id, JSON.stringify(playbook)),
+    );
+  for (const checkin of d.dailyCheckins || [])
+    queries.push(
+      db
+        .prepare(
+          'INSERT OR IGNORE INTO daily_checkins(id,owner_id,checkin_date,payload) VALUES(?,?,?,?)',
+        )
+        .bind(
+          prefix + checkin.date,
+          id,
+          checkin.date,
+          JSON.stringify(checkin),
         ),
     );
   for (const [table, items] of [
@@ -67,6 +90,8 @@ export async function readWorkspace(id: string): Promise<WorkspaceData> {
   const db = database();
   const d = emptyData();
   const tables = [
+    ['playbooks', 'playbooks'],
+    ['dailyCheckins', 'daily_checkins'],
     ['portfolios', 'portfolios'],
     ['accounts', 'trading_accounts'],
     ['trades', 'trades'],
@@ -87,5 +112,7 @@ export async function readWorkspace(id: string): Promise<WorkspaceData> {
       if (rows[0]) Object.assign(d, { [key]: rows[0] });
     } else Object.assign(d, { [key]: rows });
   });
+  const ownerSubject = (env as unknown as { AUTH_OWNER_SUBJECT?: string }).AUTH_OWNER_SUBJECT;
+  d.subscription = effectiveSubscription(d.subscription, Boolean(ownerSubject) && id === `auth0:${ownerSubject}`);
   return d;
 }

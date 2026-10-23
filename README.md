@@ -50,15 +50,17 @@ Create an identity-provider application with email/password, verified email, res
 
 Server-side Checkout, Billing Portal, signed webhook processing, subscription state, renewal/cancellation display, paid-plan gating, invoice payment records and event idempotency are implemented. Billing stays unavailable when configuration is missing; demo cannot pay.
 
-Create a Stripe account, Pro and Elite recurring prices, and configure Customer Portal. Set server-only `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ELITE_PRICE_ID` and canonical `APP_ORIGIN`. Register the implemented endpoint `/api/billing/webhook`. Subscribe to checkout completion, subscription created/updated/deleted and invoice paid/payment_failed events. Validate in Stripe test mode before using live credentials. Pricing on the landing page is proposed and is explicitly marked inactive.
+Create a Stripe account, monthly and annual Pro recurring prices, and configure Customer Portal. Set server-only `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID`, `STRIPE_PRO_ANNUAL_PRICE_ID` and canonical `APP_ORIGIN`. `STRIPE_PRO_PRICE_ID` remains a legacy monthly alias; `STRIPE_ELITE_PRICE_ID` is only for compatibility with any earlier private test subscription and is not sold by the current UI. Register the implemented endpoint `/api/billing/webhook`. Subscribe to checkout completion, subscription created/updated/deleted and invoice paid/payment_failed events. Validate in Stripe test mode before using live credentials. Pricing on the landing page is proposed and is explicitly marked inactive.
 
 ### Broker synchronization
 
-Choose a provider such as MetaApi, an MT5 bridge, or cTrader and obtain its application credentials and account authorization. `lib/broker-adapters.ts` contains the normalized provider contract and stable import identity; provider implementations, reconciliation jobs and provider-specific token storage must be connected next. The UI supports multiple prepared connections, disconnected/not-configured states and honest sync errors. No live synchronization is claimed or simulated.
+Tradovia is preparing cloud MT5 synchronization through MetaApi. The app provisions a draft MT5 account and sends the customer to MetaApi's hosted credential page to enter the MT5 login and **investor (read-only) password**; Tradovia does not receive that password. A separate scheduled Cloudflare Worker reads closed MT5 deals and imports them into the journal. This feature remains disabled until MetaApi credentials, billing, a real MT5 demo-account trial, and scheduled-worker deployment are complete. See `MT5-CLOUD-SETUP.md`. MT5 XLSX/HTML and manual import remain available.
 
 ### Hosting and operations
 
-The preview uses Sites-managed D1 and R2. Configure domain ownership/DNS for Tradovia.com when public hosting is selected. Add production secret management, monitoring, backups/restore exercises, rate limiting, data export/deletion policy and scheduled cleanup of expired demo rows and orphan image objects before public scale. Demo reset currently removes database ownership records but does not purge orphan R2 objects. Email sender/domain verification is required for public account emails. TradingView widgets are external embeds with their own availability, delays and terms.
+The preview uses Sites-managed D1 and R2. Configure domain ownership/DNS for Tradovia.com when public hosting is selected. Add production secret management, monitoring, rate limiting, data export/deletion policy and scheduled cleanup of expired demo rows and abandoned uploads before public scale. Demo reset purges the image objects known to that demo owner before replacing its database records. Email sender/domain verification is required for public account emails. TradingView widgets are external embeds with their own availability, delays and terms.
+
+Production audit, backup, and isolated restore-rehearsal commands are documented in `OPERATIONS-RUNBOOK.md`. Snapshots are written to the Git-ignored `backups/` directory and must be handled as private user data.
 
 ## Project structure
 

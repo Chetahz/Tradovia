@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { previewMt5Html, previewMt5Rows } from '../lib/mt5-report.ts';
+import {
+  detectMt5ReportSource,
+  previewMt5Html,
+  previewMt5Rows,
+} from '../lib/mt5-report.ts';
 import { net } from '../lib/domain.ts';
 
 const rows = [
@@ -56,4 +60,55 @@ void test('MT5 HTML reports are accepted', () => {
   const result = previewMt5Html(html, 'account-1');
   assert.equal(result.length, 1);
   assert.equal(result[0].trade?.importRef?.positionId, '300640609');
+});
+
+void test('Exness MT5 reports are detected and flexible closed-trade headers map correctly', () => {
+  const exnessRows = [
+    ['Exness Technologies Ltd'],
+    ['Closed Positions'],
+    [
+      'Open Time',
+      'Ticket',
+      'Instrument',
+      'Direction',
+      'Lots',
+      'Open Price',
+      'Stop Loss',
+      'Take Profit',
+      'Close Time',
+      'Close Price',
+      'P/L',
+    ],
+    [
+      '2026-04-02 08:05:00',
+      '91234567',
+      'EURUSD',
+      'long',
+      '0.10',
+      '1.0840',
+      '1.0800',
+      '1.0920',
+      '2026-04-02 09:15:00',
+      '1.0880',
+      '$40.00',
+    ],
+    ['Summary'],
+  ];
+  assert.equal(detectMt5ReportSource(exnessRows), 'Exness MT5');
+  const [result] = previewMt5Rows(exnessRows, 'account-1');
+  assert.equal(result.error, undefined);
+  assert.equal(result.trade?.side, 'LONG');
+  assert.equal(result.trade?.gross, 40);
+  assert.equal(result.trade?.fees, 0);
+  assert.equal(result.trade?.importRef?.reportedTp, 1.092);
+});
+
+void test('broker numbers with accounting negatives are accepted', () => {
+  const accountingRows = rows.map((row) => [...row]);
+  accountingRows[2][10] = '($1.25)';
+  accountingRows[2][11] = '−0.50';
+  accountingRows[2][12] = '$19.50';
+  const [result] = previewMt5Rows(accountingRows, 'account-1');
+  assert.equal(result.error, undefined);
+  assert.equal(net(result.trade!), 17.75);
 });

@@ -383,10 +383,10 @@ export default function AccountReport({
                     <linearGradient id="reportPnl" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="0%"
-                        stopColor="#3b9b72"
+                        stopColor="var(--chart-equity)"
                         stopOpacity={0.24}
                       />
-                      <stop offset="100%" stopColor="#3b9b72" stopOpacity={0} />
+                      <stop offset="100%" stopColor="var(--chart-equity)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="var(--border)" vertical={false} />
@@ -420,7 +420,7 @@ export default function AccountReport({
                   <Area
                     type="monotone"
                     dataKey="value"
-                    stroke="#3b9b72"
+                    stroke="var(--chart-equity)"
                     strokeWidth={2.25}
                     fill="url(#reportPnl)"
                     isAnimationActive={false}

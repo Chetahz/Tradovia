@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
+import type { DailyCheckin } from '@/lib/daily-checkin';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -26,10 +27,12 @@ import {
 } from '@/lib/domain';
 export function TradingCalendar({
   trades,
+  checkins = [],
   t,
   onView,
 }: {
   trades: Trade[];
+  checkins?: DailyCheckin[];
   t: Translate;
   onView: (t: Trade) => void;
 }) {
@@ -37,6 +40,9 @@ export function TradingCalendar({
     [view, setView] = useState('month'),
     [day, setDay] = useState('');
   const daily = dailyStats(trades);
+  const checkinByDate = new Map(checkins
+    .filter((item) => item.kind !== 'rest' || !trades.some((trade) => trade.date === item.date))
+    .map((item) => [item.date, item]));
   const y = anchor.getFullYear(),
     m = anchor.getMonth();
   const move = (n: number) => {
@@ -71,6 +77,11 @@ export function TradingCalendar({
           : days.some((d) => dateKey(d) === x.date)),
   );
   const total = current.reduce((n, tr) => n + tr.gross - tr.fees, 0);
+  const restCount = checkins.filter((item) => item.kind === 'rest' && !trades.some((trade) => trade.date === item.date) && (view === 'year'
+    ? item.date.startsWith(`${y}-`)
+    : view === 'month'
+      ? item.date.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`)
+      : days.some((date) => dateKey(date) === item.date))).length;
   return (
     <div className="panel calendar-panel">
       <div className="calendar-toolbar">
@@ -124,6 +135,7 @@ export function TradingCalendar({
         <strong className={total >= 0 ? 'positive' : 'negative'}>
           {money(total)}
         </strong>
+        {restCount > 0 && <span className="calendar-rest-count">{restCount} {t('intentional no-trade days', 'วันที่ตั้งใจไม่เทรด')}</span>}
       </div>
       {view === 'year' ? (
         <div className="year-grid">
@@ -159,7 +171,7 @@ export function TradingCalendar({
                               ? daily[k].pnl >= 0
                                 ? 'win-day'
                                 : 'loss-day'
-                              : ''
+                              : checkinByDate.get(k)?.kind === 'rest' ? 'rest-day' : ''
                           }
                         >
                           {d + 1}
@@ -217,12 +229,13 @@ export function TradingCalendar({
                 >
                   {week.map((d) => {
                     const key = dateKey(d),
-                      v = daily[key];
+                      v = daily[key],
+                      rest = checkinByDate.get(key)?.kind === 'rest' && !trades.some((trade) => trade.date === key);
                     return (
                       <button
                         key={key}
-                        className={`calendar-day ${d.getMonth() !== m && view === 'month' ? 'outside' : ''} ${v ? (v.pnl >= 0 ? 'win-day' : 'loss-day') : ''} ${key === dateKey(new Date()) ? 'today' : ''}`}
-                        aria-label={`${key}, ${v?.count ?? 0} trades, ${money(v?.pnl ?? 0)}`}
+                        className={`calendar-day ${d.getMonth() !== m && view === 'month' ? 'outside' : ''} ${v ? (v.pnl >= 0 ? 'win-day' : 'loss-day') : rest ? 'rest-day' : ''} ${key === dateKey(new Date()) ? 'today' : ''}`}
+                        aria-label={rest ? `${key}, ${t('intentional no-trade day', 'วันที่ตั้งใจไม่เทรด')}` : `${key}, ${v?.count ?? 0} ${t(v?.count === 1 ? 'trade' : 'trades', 'ไม้')}, ${money(v?.pnl ?? 0)}`}
                         onClick={() => setDay(key)}
                       >
                         <span>{d.getDate()}</span>
@@ -230,10 +243,11 @@ export function TradingCalendar({
                           <>
                             <strong>{money(v.pnl)}</strong>
                             <small>
-                              {v.count} {t('trades', 'ไม้')}
+                              {v.count} {t(v.count === 1 ? 'trade' : 'trades', 'ไม้')}
                             </small>
                           </>
                         )}
+                        {rest && <small>{t('Paused', 'พัก')}</small>}
                       </button>
                     );
                   })}
@@ -281,16 +295,25 @@ export function TradingCalendar({
         <DialogContent className="trade-dialog">
           <DialogTitle>{day}</DialogTitle>
           <DialogDescription>
-            {t('Trades recorded on this day', 'รายการที่บันทึกในวันนี้')}
+            {checkinByDate.get(day)?.kind === 'rest'
+              ? t('You chose not to trade on this day.', 'วันนี้คุณเลือกไม่เทรดอย่างตั้งใจ')
+              : t('Trades recorded on this day', 'รายการที่บันทึกในวันนี้')}
           </DialogDescription>
-          <TradeTable
+          {checkinByDate.get(day)?.kind === 'rest' && <p className="calendar-rest-detail">
+            {t('Reason', 'เหตุผล')}: {t(
+              ({ 'no-setup': 'No clear setup', 'risk-limit': 'Risk limit reached', news: 'News or volatility', rest: 'Taking a break' })[checkinByDate.get(day)?.reason || 'rest'],
+              ({ 'no-setup': 'ยังไม่มีจังหวะที่ชัด', 'risk-limit': 'ถึงขีดจำกัดความเสี่ยง', news: 'ข่าวหรือความผันผวน', rest: 'ตั้งใจพัก' })[checkinByDate.get(day)?.reason || 'rest'],
+            )}
+            {checkinByDate.get(day)?.note && <span>{checkinByDate.get(day)?.note}</span>}
+          </p>}
+          {trades.some((trade) => trade.date === day) && <TradeTable
             trades={trades.filter((tr) => tr.date === day)}
             t={t}
             onView={(tr) => {
               setDay('');
               onView(tr);
             }}
-          />
+          />}
         </DialogContent>
       </Dialog>
     </div>
@@ -302,6 +325,15 @@ const examplePrices = (asset: string) =>
     : asset === 'EURUSD' || asset === 'GBPUSD'
       ? { entry: 1.08, stop: 1.075 }
       : { entry: 100, stop: 95 };
+
+const riskSpecKeys = [
+  'tickSize',
+  'tickValue',
+  'step',
+  'min',
+  'max',
+  'costPerUnit',
+] as const;
 
 export function RiskCalculator({
   capital,
@@ -323,48 +355,42 @@ export function RiskCalculator({
     costPerUnit: 0,
     max: 100,
   });
-  const specKeys = [
-    'tickSize',
-    'tickValue',
-    'step',
-    'min',
-    'max',
-    'costPerUnit',
-  ] as const;
   useEffect(() => {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem('tradovia-risk-contract-v1') || 'null',
-      );
-      if (
-        saved &&
-        Object.hasOwn(assets, saved.asset) &&
-        typeof saved.custom === 'boolean' &&
-        specKeys.every(
-          (key) =>
-            typeof saved.spec?.[key] === 'number' &&
-            Number.isFinite(saved.spec[key]) &&
-            (key === 'costPerUnit'
-              ? saved.spec[key] >= 0
-              : saved.spec[key] > 0),
-        )
-      ) {
-        setAsset(saved.asset);
-        setCustom(saved.custom);
-        setDetailsOpen(
-          saved.custom ||
-            (saved.asset !== 'XAUUSD' && saved.asset !== 'EURUSD'),
+    queueMicrotask(() => {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem('tradovia-risk-contract-v1') || 'null',
         );
-        setV((current) => ({
-          ...current,
-          ...examplePrices(saved.asset),
-          ...Object.fromEntries(specKeys.map((key) => [key, saved.spec[key]])),
-        }));
+        if (
+          saved &&
+          Object.hasOwn(assets, saved.asset) &&
+          typeof saved.custom === 'boolean' &&
+          riskSpecKeys.every(
+            (key) =>
+              typeof saved.spec?.[key] === 'number' &&
+              Number.isFinite(saved.spec[key]) &&
+              (key === 'costPerUnit'
+                ? saved.spec[key] >= 0
+                : saved.spec[key] > 0),
+          )
+        ) {
+          setAsset(saved.asset);
+          setCustom(saved.custom);
+          setDetailsOpen(
+            saved.custom ||
+              (saved.asset !== 'XAUUSD' && saved.asset !== 'EURUSD'),
+          );
+          setV((current) => ({
+            ...current,
+            ...examplePrices(saved.asset),
+            ...Object.fromEntries(riskSpecKeys.map((key) => [key, saved.spec[key]])),
+          }));
+        }
+      } catch {
+        /* Browser storage is optional. */
       }
-    } catch {
-      /* Browser storage is optional. */
-    }
-    setReady(true);
+      setReady(true);
+    });
   }, []);
   useEffect(() => {
     if (!ready) return;
@@ -374,7 +400,7 @@ export function RiskCalculator({
         JSON.stringify({
           asset,
           custom,
-          spec: Object.fromEntries(specKeys.map((key) => [key, v[key]])),
+          spec: Object.fromEntries(riskSpecKeys.map((key) => [key, v[key]])),
         }),
       );
     } catch {
@@ -382,7 +408,7 @@ export function RiskCalculator({
     }
   }, [ready, asset, custom, v]);
   const set = (key: keyof RiskInput, n: number) => {
-    if (specKeys.some((specKey) => specKey === key)) setCustom(true);
+    if (riskSpecKeys.some((specKey) => specKey === key)) setCustom(true);
     setV({ ...v, [key]: n });
   };
   const standard = asset === 'XAUUSD' || asset === 'EURUSD';

@@ -49,6 +49,14 @@ export default function WeeklyReview({
   const wins = rows.filter((trade) => net(trade) > 0).length;
   const reviewed = rows.filter(isTradeReviewed);
   const followed = reviewed.filter((trade) => trade.adherence === 'yes');
+  const outside = reviewed.filter((trade) => trade.adherence === 'no');
+  const decisionMatrix = {
+    goodWin: followed.filter((trade) => net(trade) > 0).length,
+    goodLoss: followed.filter((trade) => net(trade) < 0).length,
+    badWin: outside.filter((trade) => net(trade) > 0).length,
+    badLoss: outside.filter((trade) => net(trade) < 0).length,
+  };
+  const outsideResult = outside.reduce((sum, trade) => sum + net(trade), 0);
   const riskRows = rows.filter((trade) => trade.risk > 0);
   const averageR = riskRows.length
     ? riskRows.reduce((sum, trade) => sum + net(trade) / trade.risk, 0) /
@@ -162,7 +170,55 @@ export default function WeeklyReview({
                 {reviewed.length}/{rows.length} {t('reviewed', 'รายการ')}
               </small>
             </div>
+            <div className="decision-risk-metric">
+              <span>{t('Outside-plan result', 'ผลจากไม้ที่หลุดแผน')}</span>
+              <strong>{outside.length ? money(outsideResult) : '—'}</strong>
+              <small>
+                {outside.length}{' '}
+                {t('reviewed outside-plan trades', 'ไม้ที่ทบทวนแล้วว่าอยู่นอกแผน')}
+              </small>
+            </div>
           </div>
+
+          <section
+            className="decision-matrix-card"
+            aria-label={t('Decision quality matrix', 'ตารางคุณภาพการตัดสินใจ')}
+          >
+            <div>
+              <span className="overline">
+                {t('DECISION QUALITY', 'คุณภาพการตัดสินใจ')}
+              </span>
+              <h3>
+                {t(
+                  'Separate the process from the outcome',
+                  'แยกการตัดสินใจออกจากผลลัพธ์',
+                )}
+              </h3>
+              <p>
+                {t(
+                  'A loss can come from a good decision. A win can still reinforce a broken rule.',
+                  'การขาดทุนอาจมาจากการตัดสินใจที่ดี และกำไรอาจกำลังให้รางวัลกับการหลุดกฎ',
+                )}
+              </p>
+            </div>
+            <div className="decision-matrix-grid">
+              {[
+                [t('Good Win', 'ชนะและตามแผน'), decisionMatrix.goodWin, 'good'],
+                [
+                  t('Good Loss', 'แพ้แต่ตัดสินใจถูก'),
+                  decisionMatrix.goodLoss,
+                  'good',
+                ],
+                [t('Bad Win', 'ชนะแต่หลุดแผน'), decisionMatrix.badWin, 'risk'],
+                [t('Bad Loss', 'แพ้และหลุดแผน'), decisionMatrix.badLoss, 'risk'],
+              ].map(([label, count, tone]) => (
+                <div className={String(tone)} key={String(label)}>
+                  <strong>{count}</strong>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <div className="weekly-insight-grid">
             <article>

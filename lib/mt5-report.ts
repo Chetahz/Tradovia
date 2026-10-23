@@ -33,14 +33,55 @@ function entities(value: string) {
 }
 
 function number(value: string, label: string, optional = false) {
-  const clean = String(value ?? '')
+  let clean = String(value ?? '')
     .trim()
-    .replace(/\s/g, '')
-    .replace(/,/g, '');
+    .replace(/[\s,฿$€£¥]/g, '')
+    .replace(/−/g, '-');
+  if (/^\(.+\)$/.test(clean)) clean = `-${clean.slice(1, -1)}`;
   if (!clean && optional) return 0;
   if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(clean))
     throw Error(`Invalid ${label} / ${label} ไม่ถูกต้อง`);
   return Number(clean);
+}
+
+function label(value: string) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/&nbsp;/g, '')
+    .replace(/[\s/_-]+/g, '');
+}
+
+const POSITION_SECTIONS = new Set([
+  'positions',
+  'closedpositions',
+  'closedtrades',
+  'tradehistory',
+]);
+
+const END_SECTIONS = new Set([
+  'orders',
+  'deals',
+  'transactions',
+  'summary',
+  'accountsummary',
+]);
+
+function sectionIndex(rows: string[][]) {
+  return rows.findIndex((row) =>
+    row.some((cell) => POSITION_SECTIONS.has(label(cell))),
+  );
+}
+
+export type Mt5ReportPreview = {
+  rows: CsvRow[];
+  source: string;
+};
+
+export function detectMt5ReportSource(rows: string[][]) {
+  const heading = rows.slice(0, 30).flat().join(' ').toLowerCase();
+  if (heading.includes('exness')) return 'Exness MT5';
+  return 'MetaTrader 5';
 }
 
 function mt5DateTime(value: string) {
@@ -61,7 +102,7 @@ function columnIndex(reference: string) {
   return result - 1;
 }
 
-export function parseMt5XlsxRows(buffer: ArrayBuffer) {
+function parseXlsxTables(buffer: ArrayBuffer) {
   if (buffer.byteLength > MAX_FILE) throw Error('Maximum 5 MB / ขนาดสูงสุด 5 MB');
   const zip = unzipSync(new Uint8Array(buffer));
   const unpacked = Object.values(zip).reduce(
@@ -82,7 +123,7 @@ export function parseMt5XlsxRows(buffer: ArrayBuffer) {
   const sheets = Object.keys(zip)
     .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(name))
     .sort();
-  for (const sheet of sheets) {
+  return sheets.map((sheet) => {
     const xml = decodeXml(zip[sheet]);
     const rows = [...xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/gi)].map(
       (rowMatch) => {
@@ -104,10 +145,30 @@ export function parseMt5XlsxRows(buffer: ArrayBuffer) {
         return row;
       },
     );
-    if (rows.some((row) => row.some((cell) => cell?.trim() === 'Positions')))
-      return rows;
+    return rows;
+  });
+}
+
+export function parseXlsxRows(buffer: ArrayBuffer) {
+  const tables = parseXlsxTables(buffer);
+  const best = tables
+    .filter((rows) => rows.length)
+    .sort(
+      (a, b) =>
+        b.reduce((sum, row) => sum + row.filter(Boolean).length, 0) -
+        a.reduce((sum, row) => sum + row.filter(Boolean).length, 0),
+    )[0];
+  if (!best) throw Error('Workbook has no rows / ไม่พบข้อมูลในไฟล์ Excel');
+  return best;
+}
+
+export function parseMt5XlsxRows(buffer: ArrayBuffer) {
+  for (const rows of parseXlsxTables(buffer)) {
+    if (sectionIndex(rows) >= 0) return rows;
   }
-  throw Error('MT5 Positions section not found / ไม่พบส่วน Positions ของ MT5');
+  throw Error(
+    'MT5 closed positions section not found / ไม่พบรายการเทรดที่ปิดแล้วในรายงาน MT5',
+  );
 }
 
 function htmlRows(text: string) {
@@ -129,50 +190,84 @@ function htmlRows(text: string) {
 }
 
 function findHeader(rows: string[][], start: number) {
-  for (let i = start; i < Math.min(rows.length, start + 8); i++) {
-    const labels = rows[i].map((v) =>
-      v?.trim().toLowerCase().replace(/\s+/g, ''),
-    );
-    const position = labels.indexOf('position');
-    const symbol = labels.indexOf('symbol');
-    const type = labels.indexOf('type');
-    const volume = labels.indexOf('volume');
-    if (position >= 0 && symbol > position && type > symbol && volume > type)
+  const find = (labels: string[], aliases: string[]) =>
+    labels.findIndex((value) => aliases.includes(value));
+  for (let i = start; i < Math.min(rows.length, start + 10); i++) {
+    const labels = rows[i].map(label);
+    const position = find(labels, [
+      'position',
+      'positionid',
+      'ticket',
+      'order',
+      'orderid',
+    ]);
+    const symbol = find(labels, ['symbol', 'instrument']);
+    const type = find(labels, ['type', 'side', 'direction']);
+    const volume = find(labels, ['volume', 'lot', 'lots', 'size']);
+    if (position >= 0 && symbol >= 0 && type >= 0 && volume >= 0)
       return { row: i, position, symbol, type, volume, labels };
   }
-  throw Error('MT5 Positions columns not found / ไม่พบคอลัมน์ Positions ของ MT5');
+  throw Error('MT5 trade columns not found / ไม่พบคอลัมน์ประวัติเทรดของ MT5');
+}
+
+function findColumn(labels: string[], aliases: string[]) {
+  return labels.findIndex((value) => aliases.includes(value));
+}
+
+function findPair(
+  labels: string[],
+  firstAliases: string[],
+  secondAliases: string[],
+  fallback: string,
+) {
+  let first = findColumn(labels, firstAliases);
+  let second = findColumn(labels, secondAliases);
+  if (first < 0 || second < 0) {
+    const matches = labels
+      .map((value, index) => (value === fallback ? index : -1))
+      .filter((index) => index >= 0);
+    if (first < 0) first = matches[0] ?? -1;
+    if (second < 0) second = matches[1] ?? -1;
+  }
+  return [first, second] as const;
 }
 
 export function previewMt5Rows(rows: string[][], accountId: string): CsvRow[] {
-  const section = rows.findIndex((row) =>
-    row.some((cell) => cell?.trim() === 'Positions'),
-  );
+  const section = sectionIndex(rows);
   if (section < 0)
-    throw Error('MT5 Positions section not found / ไม่พบส่วน Positions ของ MT5');
+    throw Error(
+      'MT5 closed positions section not found / ไม่พบรายการเทรดที่ปิดแล้วในรายงาน MT5',
+    );
   const header = findHeader(rows, section + 1);
   const h = header.labels;
-  const openTime = h.indexOf('time');
-  const closeTime = h.indexOf('time', openTime + 1);
-  const openPrice = h.indexOf('price');
-  const closePrice = h.indexOf('price', openPrice + 1);
-  const sl = h.findIndex((v) => v === 's/l');
-  const tp = h.findIndex((v) => v === 't/p');
-  const commission = h.indexOf('commission');
-  const swap = h.indexOf('swap');
-  const profit = h.indexOf('profit');
-  if (
-    [openTime, closeTime, openPrice, closePrice, commission, swap, profit].some(
-      (i) => i < 0,
-    )
-  )
-    throw Error(
-      'Unsupported MT5 Positions layout / รูปแบบ Positions นี้ยังไม่รองรับ',
-    );
+  const [openTime, closeTime] = findPair(
+    h,
+    ['opentime', 'openingtime', 'timeopen'],
+    ['closetime', 'closingtime', 'timeclose'],
+    'time',
+  );
+  const [openPrice, closePrice] = findPair(
+    h,
+    ['openprice', 'openingprice', 'priceopen'],
+    ['closeprice', 'closingprice', 'priceclose'],
+    'price',
+  );
+  const sl = findColumn(h, ['sl', 'stoploss']);
+  const tp = findColumn(h, ['tp', 'takeprofit']);
+  const commission = findColumn(h, [
+    'commission',
+    'commissionusd',
+    'commissions',
+  ]);
+  const swap = findColumn(h, ['swap', 'swaps']);
+  const profit = findColumn(h, ['profit', 'pnl', 'pl', 'netprofit', 'result']);
+  if ([openTime, closeTime, openPrice, closePrice, profit].some((i) => i < 0))
+    throw Error('Unsupported MT5 trade layout / รูปแบบรายงาน MT5 นี้ยังไม่รองรับ');
   const result: CsvRow[] = [];
   for (let i = header.row + 1; i < rows.length; i++) {
     const cells = rows[i];
     const first = cells.find((cell) => cell?.trim())?.trim() ?? '';
-    if (first === 'Orders' || first === 'Deals') break;
+    if (END_SECTIONS.has(label(first))) break;
     if (!cells[header.position]?.trim()) continue;
     try {
       const opened = mt5DateTime(cells[openTime]);
@@ -180,14 +275,20 @@ export function previewMt5Rows(rows: string[][], accountId: string): CsvRow[] {
       const brokerSymbol = cells[header.symbol].trim().toUpperCase();
       const positionId = cells[header.position].trim();
       const side = cells[header.type].trim().toLowerCase();
-      const commissionValue = number(cells[commission], 'commission', true);
-      const swapValue = number(cells[swap], 'swap', true);
+      const commissionValue =
+        commission >= 0 ? number(cells[commission], 'commission', true) : 0;
+      const swapValue = swap >= 0 ? number(cells[swap], 'swap', true) : 0;
       const profitValue = number(cells[profit], 'profit');
       const trade = validateTrade({
         id: crypto.randomUUID(),
         accountId,
         symbol: brokerSymbol.replace(/\.[A-Z0-9]+$/, ''),
-        side: side === 'buy' ? 'LONG' : side === 'sell' ? 'SHORT' : side,
+        side:
+          side === 'buy' || side === 'long'
+            ? 'LONG'
+            : side === 'sell' || side === 'short'
+              ? 'SHORT'
+              : side,
         status: 'CLOSED',
         date: opened.date,
         time: opened.time,
@@ -238,6 +339,28 @@ export function previewMt5Xlsx(buffer: ArrayBuffer, accountId: string) {
   return previewMt5Rows(parseMt5XlsxRows(buffer), accountId);
 }
 
+export function inspectMt5Xlsx(
+  buffer: ArrayBuffer,
+  accountId: string,
+): Mt5ReportPreview {
+  const table = parseMt5XlsxRows(buffer);
+  return {
+    rows: previewMt5Rows(table, accountId),
+    source: detectMt5ReportSource(table),
+  };
+}
+
 export function previewMt5Html(text: string, accountId: string) {
   return previewMt5Rows(htmlRows(text), accountId);
+}
+
+export function inspectMt5Html(
+  text: string,
+  accountId: string,
+): Mt5ReportPreview {
+  const table = htmlRows(text);
+  return {
+    rows: previewMt5Rows(table, accountId),
+    source: detectMt5ReportSource(table),
+  };
 }

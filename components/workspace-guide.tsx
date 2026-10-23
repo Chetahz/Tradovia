@@ -32,7 +32,10 @@ export default function WorkspaceGuide({
   useEffect(() => {
     queueMicrotask(() => {
       try {
-        setHidden(localStorage.getItem(key) === 'hidden');
+        const guideChoice = localStorage.getItem(key);
+        setHidden(
+          guideChoice === 'hidden' || (hasTrades && guideChoice !== 'open'),
+        );
         const nextVisited = new Set(
           (localStorage.getItem(visitedKey) || '').split(',').filter(Boolean),
         );
@@ -46,7 +49,7 @@ export default function WorkspaceGuide({
       }
       setReady(true);
     });
-  }, [key, page, visitedKey]);
+  }, [hasTrades, key, page, visitedKey]);
 
   const dismiss = () => {
     setHidden(true);
@@ -59,7 +62,7 @@ export default function WorkspaceGuide({
   const reopen = () => {
     setHidden(false);
     try {
-      localStorage.removeItem(key);
+      localStorage.setItem(key, 'open');
     } catch {
       /* Session-only preference. */
     }

@@ -5,7 +5,7 @@ export const csvTemplate =
 export type CsvRow = { row: number; trade?: Trade; error?: string };
 
 // Quoted fields may contain commas, newlines and escaped double quotes.
-export function parseCsv(text: string): string[][] {
+export function parseCsv(text: string, delimiter = ','): string[][] {
   if (text.length > 2 * 1024 * 1024)
     throw Error('File exceeds 2 MB / ไฟล์เกิน 2 MB');
   const rows: string[][] = [];
@@ -36,7 +36,7 @@ export function parseCsv(text: string): string[][] {
           closed = true;
         }
       } else field += c;
-    } else if (c === ',') cell();
+    } else if (c === delimiter) cell();
     else if (c === '\n' || c === '\r') {
       line();
       if (c === '\r' && text[i + 1] === '\n') i++;
@@ -53,8 +53,12 @@ export function parseCsv(text: string): string[][] {
 }
 
 export function tradeFingerprint(t: Trade) {
-  if (t.importRef?.format === 'MT5')
-    return JSON.stringify([t.accountId, 'MT5', t.importRef.positionId]);
+  if (t.importRef)
+    return JSON.stringify([
+      t.accountId,
+      t.importRef.format,
+      t.importRef.positionId,
+    ]);
   return JSON.stringify([
     t.accountId,
     t.symbol,

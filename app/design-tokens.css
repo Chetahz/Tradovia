@@ -1,0 +1,150 @@
+/* Tradovia brand foundation. Brand primary is approved, never sampled.
+   Trading semantics deliberately do not inherit the brand primary. */
+:root {
+  /* A. Brand / palette */
+  --brand-primary: #00efd3;
+  --brand-primary-rgb: 0, 239, 211;
+  --brand-black: #000000;
+  --brand-white: #ffffff;
+  --brand-charcoal: #1a1a1a;
+  --palette-canvas: #f6f7f8;
+  --palette-ink: #202428;
+  --palette-muted-ink: #616970;
+  --palette-night: #111214;
+  --palette-night-card: #191b1e;
+  --palette-night-raised: #22252a;
+  --palette-night-text: #f0f2f4;
+  --palette-night-muted: #a5abb3;
+
+  /* B. Semantic roles — light */
+  --surface-page: var(--palette-canvas);
+  --surface-card: var(--brand-white);
+  --surface-raised: var(--brand-white);
+  --surface-subtle: #eef0f2;
+  --surface-muted: #f1f2f4;
+  --text-main: var(--palette-ink);
+  --text-muted: var(--palette-muted-ink);
+  --line-subtle: #e0e3e6;
+  --line-input: #8b949e;
+  --action-fill: var(--brand-charcoal);
+  --action-label: var(--brand-white);
+  --action-text: var(--palette-ink);
+  --state-selected-surface: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--surface-card)
+  );
+  --state-selected-text: var(--palette-ink);
+  --focus-color: #006b60;
+  --profit: #238060;
+  --loss: #c24b54;
+  --long: #238060;
+  --short: #c24b54;
+  --success: #237547;
+  --warning: #875800;
+  --error: #b42332;
+  --error-surface: #fff0ed;
+  --chart-equity: #238060;
+  --chart-category-2: #536da3;
+  --chart-category-3: #8765a8;
+  --chart-category-4: #916400;
+  --chart-category-5: #66746e;
+
+  /* Fixed dark media/story surfaces are intentional in both themes. */
+  --media-surface: #15171a;
+  --media-stage: #0b0d10;
+  --media-control: #262a30;
+  --media-text: #edf0f4;
+  --media-muted: #b4bac2;
+  --media-border: #6a737e;
+  --story-surface: #111416;
+  --story-glow: color-mix(
+    in srgb,
+    var(--brand-primary) 12%,
+    var(--story-surface)
+  );
+  --story-text: #f1f3f5;
+  --story-muted: #b8c0c6;
+  --shadow-soft: rgb(0 0 0 / 6%);
+  --shadow-float: rgb(0 0 0 / 13%);
+}
+
+.dark {
+  --surface-page: var(--palette-night);
+  --surface-card: var(--palette-night-card);
+  --surface-raised: var(--palette-night-raised);
+  --surface-subtle: #24272c;
+  --surface-muted: #202328;
+  --text-main: var(--palette-night-text);
+  --text-muted: var(--palette-night-muted);
+  --line-subtle: #343940;
+  --line-input: #6a737e;
+  --action-fill: var(--brand-primary);
+  --action-label: var(--palette-night);
+  --action-text: var(--brand-primary);
+  --state-selected-surface: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--surface-card)
+  );
+  --state-selected-text: var(--brand-primary);
+  --focus-color: var(--brand-primary);
+  --profit: #8bd5af;
+  --loss: #f3979c;
+  --long: #8bd5af;
+  --short: #f3979c;
+  --success: #94d4a8;
+  --warning: #e9c46a;
+  --error: #f3979c;
+  --error-surface: #3d2225;
+  --chart-equity: #8bd5af;
+  --chart-category-2: #a1b7ec;
+  --chart-category-3: #c7a5e5;
+  --chart-category-4: #e9c46a;
+  --chart-category-5: #a5abb3;
+}
+
+/* C. Component adapters. Re-declare in both scopes so aliases resolve
+   against that theme, including portals which already carry .dark. */
+:root,
+.dark {
+  --background: var(--surface-page);
+  --foreground: var(--text-main);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-main);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text-main);
+  --primary: var(--action-fill);
+  --primary-foreground: var(--action-label);
+  --secondary: var(--surface-subtle);
+  --secondary-foreground: var(--text-main);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--state-selected-surface);
+  --accent-foreground: var(--state-selected-text);
+  --destructive: var(--error);
+  --border: var(--line-subtle);
+  --input: var(--line-input);
+  --ring: var(--focus-color);
+  --sidebar: var(--surface-card);
+  --sidebar-foreground: var(--text-muted);
+  --sidebar-primary: var(--action-fill);
+  --sidebar-primary-foreground: var(--action-label);
+  --sidebar-accent: var(--state-selected-surface);
+  --sidebar-accent-foreground: var(--state-selected-text);
+  --sidebar-border: var(--line-subtle);
+  --sidebar-ring: var(--focus-color);
+  --positive: var(--profit);
+  --negative: var(--loss);
+  --buy: var(--long);
+  --sell: var(--short);
+  --chart-1: var(--chart-equity);
+  --chart-2: var(--chart-category-2);
+  --chart-3: var(--chart-category-3);
+  --chart-4: var(--chart-category-4);
+  --chart-5: var(--chart-category-5);
+  --radius: 0.8rem;
+  --brand-mark-color: var(--brand-primary);
+  --hero-glow: color-mix(in srgb, var(--brand-primary) 7%, transparent);
+  --hero-glow-secondary: color-mix(in srgb, var(--text-muted) 5%, transparent);
+}

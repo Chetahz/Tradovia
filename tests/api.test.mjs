@@ -14,7 +14,10 @@ function client() {
     });
     const set = response.headers.get('set-cookie');
     if (set) cookie = set.split(';')[0];
-    return { status: response.status, data: await response.json(), cookie };
+    const text = await response.text();
+    assert.ok(response.headers.get('content-type')?.includes('application/json'),
+      `${path} ${body?.action || 'GET'} returned ${response.status}: ${text.slice(0, 180)}`);
+    return { status: response.status, data: JSON.parse(text), cookie };
   };
 }
 await test('persisted CRUD, goals, accounts and cross-session isolation', async () => {
@@ -36,7 +39,7 @@ await test('persisted CRUD, goals, accounts and cross-session isolation', async 
     action: 'saveTrade',
     value: trade,
   });
-  assert.equal(created.status, 200);
+  assert.equal(created.status, 200, JSON.stringify(created.data));
   assert.equal(created.data.trades.length, 25);
   const read = await a('/api/workspace?mode=demo');
   assert.equal(read.data.trades.find((t) => t.id === trade.id).gross, 444);
@@ -99,7 +102,7 @@ await test('cross-origin mutations fail closed', async () => {
     },
     body: JSON.stringify({ action: 'resetDemo' }),
   });
-  assert.equal(r.status, 403);
+  assert.equal(r.status, 403, await r.text());
 });
 await test('uploaded images are private to the owning demo session', async () => {
   const a = client(),
@@ -127,6 +130,25 @@ await test('uploaded images are private to the owning demo session', async () =>
     headers: { cookie: two.cookie },
   });
   assert.equal(blocked.status, 404);
+  const withImage = {
+    ...one.data.trades[0],
+    imageIds: [image.id],
+    imageStages: { [image.id]: 'before' },
+  };
+  const attached = await a('/api/workspace?mode=demo', {
+    action: 'saveTrade',
+    value: withImage,
+  });
+  assert.equal(attached.status, 200);
+  const detached = await a('/api/workspace?mode=demo', {
+    action: 'saveTrade',
+    value: { ...withImage, imageIds: [], imageStages: {} },
+  });
+  assert.equal(detached.status, 200);
+  const removed = await fetch(origin + `/api/images/${image.id}?mode=demo`, {
+    headers: { cookie: one.cookie },
+  });
+  assert.equal(removed.status, 404);
   const invalidForm = new FormData();
   invalidForm.set(
     'image',

@@ -53,11 +53,13 @@ export function LandingGuide({ th }: { th: boolean }) {
   ];
   return (
     <section className="land-section landing-guide" id="how-it-works">
-      <div className="eyebrow">
+      <div className="eyebrow" data-reveal>
         {t('A ROUTINE YOU CAN RETURN TO', 'กระบวนการที่กลับมาใช้ได้ทุกวัน')}
       </div>
-      <h2>{t('From intention to insight.', 'จากแผน สู่ความเข้าใจ')}</h2>
-      <p className="section-intro">
+      <h2 className="reveal-delay-1" data-reveal>
+        {t('From intention to insight.', 'จากแผน สู่ความเข้าใจ')}
+      </h2>
+      <p className="section-intro reveal-delay-2" data-reveal>
         {t(
           'Four connected steps. One place to keep your process.',
           'สี่ขั้นตอนที่เชื่อมถึงกัน ในพื้นที่เดียว',
@@ -65,7 +67,7 @@ export function LandingGuide({ th }: { th: boolean }) {
       </p>
       <div className="guide-grid">
         {steps.map(({ Icon, title, description, link, action }, i) => (
-          <article key={link}>
+          <article key={link} data-reveal>
             <div className="guide-step">
               <span>0{i + 1}</span>
               <Icon size={24} strokeWidth={1.5} />
@@ -89,8 +91,8 @@ export function LandingFAQ({ th }: { th: boolean }) {
     [
       t('Do I need to connect a broker?', 'ต้องเชื่อมโบรกเกอร์ก่อนหรือไม่?'),
       t(
-        'No. Record trades manually or import closed positions from an MT5 XLSX or HTML report. Automatic broker sync is not available in this preview; supported connections and account limits will be confirmed later.',
-        'ไม่จำเป็น คุณบันทึกเทรดด้วยตนเอง หรือนำเข้า Positions ที่ปิดแล้วจากรายงาน MT5 แบบ XLSX หรือ HTML ได้ พรีวิวนี้ยังไม่มีการซิงก์โบรกเกอร์อัตโนมัติ โดยจะยืนยันบริการที่รองรับและจำนวนบัญชีภายหลัง',
+        'No. Record trades manually on Free, or use Pro to import closed positions from an MT5 XLSX or HTML report. Tradovia does not ask for your broker password.',
+        'ไม่จำเป็น Free บันทึกเทรดด้วยตนเองได้ ส่วน Pro นำเข้า Positions ที่ปิดแล้วจากรายงาน MT5 แบบ XLSX หรือ HTML ได้ โดย Tradovia ไม่ขอรหัสผ่านโบรกเกอร์',
       ),
     ],
     [
@@ -99,8 +101,8 @@ export function LandingFAQ({ th }: { th: boolean }) {
         'Free กับ Pro ต่างกันอย่างไร?',
       ),
       t(
-        'Free is designed for one portfolio, manual journaling and core tools. Pro is planned for multiple portfolios, deeper reviews and cloud storage. The preview is free to explore; final limits will be shown before paid subscriptions open.',
-        'Free วางไว้สำหรับหนึ่งพอร์ต การบันทึกด้วยตนเอง และเครื่องมือพื้นฐาน ส่วน Pro วางไว้สำหรับหลายพอร์ต การทบทวนเชิงลึก และพื้นที่เก็บข้อมูลบนคลาวด์ ตอนนี้พรีวิวใช้ฟรี โดยจะระบุขีดจำกัดให้ชัดเจนก่อนเปิดรับชำระเงิน',
+        'Free includes one portfolio, 50 manual trades and core tools. Pro unlocks complete history, multiple portfolios, report import and deeper analysis. MT5 Auto Sync will belong to a future third plan.',
+        'Free ใช้ได้ 1 พอร์ต บันทึกเอง 50 รายการ ปฏิทินย้อนหลัง 30 วัน และเครื่องมือพื้นฐาน ส่วน Pro ปลดล็อกหลายพอร์ต ประวัติทั้งหมด การนำเข้ารายงาน และการวิเคราะห์เชิงลึก โดย MT5 Auto Sync จะอยู่ในแพ็กเกจระดับ 3 ในอนาคต',
       ),
     ],
     [
@@ -111,20 +113,17 @@ export function LandingFAQ({ th }: { th: boolean }) {
       ),
     ],
     [
+      t('Where is my preview data stored?', 'ข้อมูลเก็บที่ไหน และใช้ข้ามเครื่องได้ไหม?'),
       t(
-        'Where is my preview data stored?',
-        'ข้อมูลพรีวิวเก็บที่ไหน และใช้ข้ามเครื่องได้ไหม?',
-      ),
-      t(
-        'Preview data is stored in this browser on this device. It does not sync across devices and can be lost if browser data is cleared. Sample demo trades and your onboarding workspace are separate. Account creation, email verification and password recovery are simulated.',
-        'ข้อมูลพรีวิวเก็บในเบราว์เซอร์ของอุปกรณ์นี้ ยังไม่ซิงก์ข้ามเครื่องและอาจหายเมื่อล้างข้อมูลเบราว์เซอร์ พอร์ตที่สร้างผ่านขั้นตอนเริ่มใช้จะแยกจากข้อมูลเดโมตัวอย่าง ส่วนการสมัคร ยืนยันอีเมล และกู้รหัสผ่านเป็นการจำลอง',
+        'Your signed-in workspace saves data to your account on the server, so you can access it from another device by signing in to the same account. The demo is separate and is not your personal workspace. Sign-up, email verification and password recovery use Auth0.',
+        'เวิร์กสเปซหลังเข้าสู่ระบบบันทึกข้อมูลของบัญชีคุณบนเซิร์ฟเวอร์ ใช้ข้ามเครื่องได้โดยเข้าสู่บัญชีเดิม ส่วนเดโมแยกจากเวิร์กสเปซส่วนตัว การสมัคร ยืนยันอีเมล และกู้รหัสผ่านใช้ระบบ Auth0 จริง',
       ),
     ],
     [
       t('Can I import or export my trades?', 'นำเข้าและส่งออกข้อมูลได้ไหม?'),
       t(
-        'Yes. Preview and import closed positions from MT5 account-history reports in XLSX or HTML format, or use the Tradovia CSV template. Duplicate rows are checked before confirmation, and journal entries can be exported as CSV. Automatic broker sync is planned for a later phase.',
-        'ได้ คุณตรวจและนำเข้า Positions ที่ปิดแล้วจากรายงานประวัติบัญชี MT5 แบบ XLSX หรือ HTML รวมถึงแม่แบบ CSV ของ Tradovia ระบบจะตรวจรายการซ้ำก่อนยืนยัน และส่งออก Journal เป็น CSV ได้ ส่วนการซิงก์โบรกเกอร์อัตโนมัติจะพัฒนาในระยะถัดไป',
+        'Both plans can export the journal as CSV or JSON. Pro also imports closed positions from MT5 XLSX or HTML reports and the Tradovia CSV template.',
+        'ทั้ง Free และ Pro ส่งออก Journal เป็น CSV หรือ JSON ได้ ส่วน Pro เพิ่มการนำเข้า Positions ที่ปิดแล้วจากรายงาน MT5 แบบ XLSX หรือ HTML และแม่แบบ CSV ของ Tradovia',
       ),
     ],
     [
@@ -140,14 +139,14 @@ export function LandingFAQ({ th }: { th: boolean }) {
         'รายเดือน รายปี และสกุลเงินต่างกันอย่างไร?',
       ),
       t(
-        'The proposed Pro prices are ฿199/month or ฿1,990/year, and $5.99/month or $59.90/year. Yearly billing is one payment for the full year, saving about 16.7% versus twelve monthly payments. Choose THB or USD independently of language. No payments are collected in the preview; renewal and cancellation terms will be confirmed before launch.',
-        'ราคาเสนอของ Pro คือ ฿199/เดือน หรือ ฿1,990/ปี และ $5.99/เดือน หรือ $59.90/ปี รายปีชำระยอดทั้งปีครั้งเดียว ประหยัดประมาณ 16.7% เมื่อเทียบกับรายเดือน 12 ครั้ง คุณเลือก THB หรือ USD แยกจากภาษาได้ พรีวิวยังไม่เรียกเก็บเงิน โดยจะยืนยันเงื่อนไขต่ออายุและยกเลิกก่อนเปิดบริการ',
+        'The founding Pro prices are ฿129/month or ฿1,290/year. Yearly billing is one payment for the full year, saving about 16.7% versus twelve monthly payments. Launch billing is in THB; more currencies can be added later. The current preview uses Stripe Sandbox and does not collect real payments.',
+        'ราคาผู้ใช้กลุ่มแรกของ Pro คือ ฿129/เดือน หรือ ฿1,290/ปี รายปีชำระยอดทั้งปีครั้งเดียว ประหยัดประมาณ 16.7% เมื่อเทียบกับรายเดือน 12 ครั้ง ช่วงเปิดตัวจะชำระเป็นบาท และจะเพิ่มสกุลเงินอื่นได้ภายหลัง พรีวิวปัจจุบันใช้ Stripe Sandbox และไม่มีการเรียกเก็บเงินจริง',
       ),
     ],
   ];
   return (
     <section className="land-section landing-faq" id="faq">
-      <div className="faq-intro">
+      <div className="faq-intro" data-reveal>
         <div className="eyebrow">{t('BEFORE YOU BEGIN', 'ก่อนเริ่มใช้งาน')}</div>
         <h2>{t('A little more clarity.', 'คำตอบก่อนเริ่มต้น')}</h2>
         <p className="section-intro">
@@ -160,7 +159,7 @@ export function LandingFAQ({ th }: { th: boolean }) {
       </div>
       <div className="faq-list">
         {items.map(([question, answer], i) => (
-          <details key={i}>
+          <details key={i} data-reveal>
             <summary>
               {question}
               <span aria-hidden="true">+</span>

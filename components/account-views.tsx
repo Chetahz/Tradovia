@@ -1,19 +1,29 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
+import WorkspaceExit from './workspace-exit';
+import ProfileAvatar from './profile-avatar';
 import BillingControls from './billing-controls';
+import PlanComparison from './plan-comparison';
+import DeleteAccount from './delete-account';
 import {
   Wallet,
   Plus,
-  Plug,
-  ShieldCheck,
   Pencil,
   Download,
   ArrowUpRight,
   LogOut,
+  BellRing,
+  MoonStar,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Pick, type Translate } from './workspace-ui';
 import { statistics, money, type WorkspaceData } from '@/lib/domain';
+import {
+  defaultReviewReminder,
+  type ReviewReminder,
+} from '@/lib/review-reminder';
+import { FREE_LIMITS, hasProAccess } from '@/lib/plan-access';
 export function AccountViews({
   page,
   data,
@@ -24,9 +34,10 @@ export function AccountViews({
   th,
   setTh,
   setFormKind,
-  mutate,
+  reload,
   exportData,
   reset,
+  saveReviewReminder,
 }: {
   page: string;
   data: WorkspaceData;
@@ -37,10 +48,57 @@ export function AccountViews({
   th: boolean;
   setTh: (v: boolean) => void;
   setFormKind: (v: string) => void;
-  mutate: (action: string, value: unknown) => Promise<boolean>;
+  reload: () => Promise<void>;
   exportData: (csv?: boolean) => void;
   reset: () => void;
+  saveReviewReminder: (value: ReviewReminder) => Promise<boolean>;
 }) {
+  const proAccess = mode === 'demo' || hasProAccess(data.subscription);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [reminder, setReminder] = useState<ReviewReminder>(
+    data.profile.reviewReminder ?? defaultReviewReminder,
+  );
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
+  const updateAvatar = async (file?: File) => {
+    if (
+      file &&
+      (file.size > 2000000 ||
+        !['image/png', 'image/jpeg', 'image/webp'].includes(file.type))
+    ) {
+      setAvatarError(
+        t(
+          'Choose a PNG, JPEG or WebP image under 2 MB.',
+          'เลือกรูป PNG, JPEG หรือ WebP ขนาดไม่เกิน 2 MB',
+        ),
+      );
+      return;
+    }
+    setAvatarBusy(true);
+    setAvatarError('');
+    try {
+      const form = new FormData();
+      if (file) form.set('image', file);
+      const response = await fetch(`/api/profile/avatar?mode=${mode}`, {
+        method: file ? 'POST' : 'DELETE',
+        ...(file ? { body: form } : {}),
+      });
+      if (!response.ok) {
+        const result = (await response.json()) as { error?: string };
+        throw new Error(result.error || 'Unable to update profile image');
+      }
+      await reload();
+    } catch (error) {
+      setAvatarError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to update profile image',
+      );
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
   if (page === 'portfolio')
     return (
       <>
@@ -48,10 +106,14 @@ export function AccountViews({
           <h2>{t('Your capital, organized.', 'จัดการเงินทุนอย่างเป็นระบบ')}</h2>
           <button
             className="button ghost compact"
-            onClick={() => setFormKind('portfolio')}
+            onClick={() => {
+              if (!proAccess && data.portfolios.length > 0) window.location.hash = 'settings';
+              else setFormKind('portfolio');
+            }}
           >
             <Plus size={16} />
-            {t('New portfolio', 'สร้างพอร์ต')}
+            {t('New portfolio', 'สร้างพอร์ต')}{' '}
+            {!proAccess && data.portfolios.length > 0 && <span className="plan-badge">PRO</span>}
           </button>
         </div>
         <div className="two-col">
@@ -67,7 +129,7 @@ export function AccountViews({
             return (
               <div className="panel" key={p.id}>
                 <span className="overline">
-                  USD · {t('MANUAL + FUTURE SYNC', 'บันทึกเอง + พร้อมรองรับซิงก์')}
+                  USD · {t('MANUAL + REPORT IMPORT', 'บันทึกเอง + นำเข้ารายงาน')}
                 </span>
                 <h2>{p.name}</h2>
                 <div className="portfolio-equity">
@@ -109,114 +171,88 @@ export function AccountViews({
         )}
         <button
           className="button ghost mt-5"
-          onClick={() => setFormKind('account')}
+          onClick={() => {
+            if (!proAccess && data.accounts.length > 0) window.location.hash = 'settings';
+            else setFormKind('account');
+          }}
           disabled={!data.portfolios.length}
         >
           <Plus size={16} />
-          {t('Add manual account', 'เพิ่มบัญชีบันทึกเอง')}
+          {t('Add manual account', 'เพิ่มบัญชีบันทึกเอง')}{' '}
+          {!proAccess && data.accounts.length > 0 && <span className="plan-badge">PRO</span>}
         </button>
-      </>
-    );
-  if (page === 'connections')
-    return (
-      <>
-        <div className="panel connection-intro">
-          <Plug size={34} strokeWidth={1.4} />
-          <div>
-            <h2>
-              {t(
-                'Your brokers. One clear picture.',
-                'รวมบัญชีโบรกเกอร์ เห็นภาพเดียวกัน',
-              )}
-            </h2>
-            <p>
-              {t(
-                'Manual journaling works today. Prepare your accounts for provider-backed synchronization.',
-                'บันทึกเองได้ทันที เตรียมบัญชีสำหรับการซิงก์ผ่านผู้ให้บริการในอนาคต',
-              )}
-            </p>
-          </div>
-          <button
-            className="button ink"
-            disabled={!data.accounts.length}
-            onClick={() => setFormKind('connection')}
-          >
-            <Plus size={16} />
-            {t('Prepare connection', 'เตรียมการเชื่อมต่อ')}
-          </button>
-        </div>
-        <div className="notice">
-          <ShieldCheck size={19} />
-          <span>
-            {t(
-              'Broker sync is not connected. No broker credentials are collected in this preview.',
-              'ยังไม่ได้เชื่อมต่อระบบซิงก์ พรีวิวนี้ไม่เก็บรหัสผ่านโบรกเกอร์',
-            )}
-          </span>
-        </div>
-        {data.connections.map((c) => (
-          <div className="panel connection-card" key={c.id}>
-            <div className="section-heading">
-              <h2>{c.provider}</h2>
-              <span className="pill">
-                {c.status === 'not_configured'
-                  ? t('Provider not configured', 'ยังไม่ตั้งค่าผู้ให้บริการ')
-                  : c.status === 'disconnected'
-                    ? t('Disconnected', 'ยกเลิกการเชื่อมต่อแล้ว')
-                    : c.status}
-              </span>
-            </div>
-            <p>{data.accounts.find((a) => a.id === c.accountId)?.name}</p>
-            <div className="connection-meta">
-              <span>
-                {t('Last sync', 'ซิงก์ล่าสุด')}:{' '}
-                {c.lastSync ?? t('Never', 'ยังไม่เคย')}
-              </span>
-              <span>
-                {t('Sync status', 'สถานะซิงก์')}: {t('Unavailable', 'ยังไม่พร้อม')}
-              </span>
-            </div>
-            {c.error && <p role="alert">{c.error}</p>}
-            <div className="actions">
-              <button
-                className="button ghost compact"
-                onClick={() => void mutate('reconnect', c.id)}
-              >
-                {t('Reconnect', 'เชื่อมต่อใหม่')}
-              </button>
-              <button
-                className="button ghost compact"
-                onClick={() => void mutate('sync', c.id)}
-              >
-                {t('Sync now', 'ซิงก์ตอนนี้')}
-              </button>
-              <button
-                className="text-button"
-                disabled={c.status === 'disconnected'}
-                onClick={() => void mutate('disconnect', c.id)}
-              >
-                {t('Disconnect', 'ยกเลิกการเชื่อมต่อ')}
-              </button>
-            </div>
-          </div>
-        ))}
-        <div className="panel">
-          <h2>
-            {t('Built for more than one broker.', 'ออกแบบให้รองรับหลายโบรกเกอร์')}
-          </h2>
-          <p className="muted-copy">
-            {t(
-              'MT5 bridge, MetaApi and cTrader adapters share a normalized trade model. A provider must be configured and verified before any sync can run.',
-              'MT5 bridge, MetaApi และ cTrader ใช้รูปแบบข้อมูลกลาง ต้องเชื่อมต่อและทดสอบผู้ให้บริการก่อนเริ่มซิงก์',
-            )}
-          </p>
-        </div>
       </>
     );
   return (
     <div className="two-col">
       <div className="panel">
-        <h2>{t('Make it yours', 'ปรับให้เป็นคุณ')}</h2>
+        <h2>{t('Your profile', 'โปรไฟล์ของคุณ')}</h2>
+        <div className="settings-profile-row">
+          <ProfileAvatar profile={data.profile} mode={mode} large />
+          <div>
+            <strong>{data.profile.name}</strong>
+            <small>
+              {t(
+                'The name Tradovia uses to greet you',
+                'ชื่อที่ Tradovia ใช้ทักทายคุณ',
+              )}
+            </small>
+          </div>
+        </div>
+        <div className="settings-profile-actions">
+          <button
+            className="button ghost compact"
+            type="button"
+            onClick={() => setFormKind('profile')}
+          >
+            <Pencil size={15} /> {t('Edit name & timezone', 'แก้ไขชื่อและเขตเวลา')}
+          </button>
+          <label
+            className="button ghost compact"
+            htmlFor="profile-avatar-upload"
+          >
+            {avatarBusy
+              ? t('Updating…', 'กำลังอัปเดต…')
+              : t('Choose photo', 'เลือกรูปโปรไฟล์')}
+          </label>
+          <input
+            id="profile-avatar-upload"
+            className="profile-file-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={avatarBusy}
+            aria-label={t('Choose profile photo', 'เลือกรูปโปรไฟล์')}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = '';
+              if (file) void updateAvatar(file);
+            }}
+          />
+          {data.profile.avatarVersion && (
+            <button
+              className="text-button"
+              type="button"
+              disabled={avatarBusy}
+              onClick={() => void updateAvatar()}
+            >
+              {t('Remove photo', 'ลบรูป')}
+            </button>
+          )}
+        </div>
+        {avatarError && (
+          <p className="negative" role="alert">
+            {avatarError}
+          </p>
+        )}
+        <p className="muted-copy mt-4">
+          {t(
+            'A photo is optional. Only your signed-in account can load it.',
+            'ไม่ต้องใส่รูปก็ได้ เฉพาะบัญชีที่เข้าสู่ระบบเท่านั้นที่โหลดรูปนี้ได้',
+          )}
+        </p>
+      </div>
+      <div className="panel">
+        <h2>{t('App preferences', 'การใช้งานแอป')}</h2>
         <div className="rule-row">
           <span>{t('Dark mode', 'ธีมมืด')}</span>
           <Switch
@@ -237,16 +273,111 @@ export function AccountViews({
             ]}
           />
         </div>
-        <button
-          className="button ghost compact"
-          onClick={() => setFormKind('profile')}
-        >
-          <Pencil size={15} />
-          {t('Edit profile', 'แก้ไขโปรไฟล์')}
-        </button>
-        <p className="muted-copy mt-4">
-          {data.profile.name} · {data.profile.timezone}
-        </p>
+        <div className="rule-row">
+          <span>{t('Timezone', 'เขตเวลา')}</span>
+          <b>{data.profile.timezone}</b>
+        </div>
+      </div>
+      <div className="panel review-reminder-settings">
+        <div className="review-reminder-heading">
+          <span className="settings-feature-icon">
+            <BellRing size={19} />
+          </span>
+          <div>
+            <h2>{t('Daily review reminder', 'เตือนทบทวนประจำวัน')}</h2>
+            <p className="muted-copy">
+              {t(
+                'A quiet in-app nudge to finish one review. It never asks you to trade.',
+                'เตือนเบา ๆ ภายในแอปให้ทบทวนหนึ่งรายการ โดยไม่กระตุ้นให้คุณเข้าเทรด',
+              )}
+            </p>
+          </div>
+          <Switch
+            checked={reminder.enabled}
+            onCheckedChange={(enabled) => {
+              setReminder((current) => ({ ...current, enabled }));
+              setReminderMessage('');
+            }}
+            aria-label={t('Daily review reminder', 'เตือนทบทวนประจำวัน')}
+          />
+        </div>
+        <div className="review-reminder-grid">
+          <label>
+            <span>{t('Remind me at', 'เตือนเวลา')}</span>
+            <input
+              type="time"
+              value={reminder.time}
+              disabled={!reminder.enabled || reminderBusy}
+              onChange={(event) =>
+                setReminder((current) => ({
+                  ...current,
+                  time: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label>
+            <span>
+              <MoonStar size={15} /> {t('Quiet from', 'พักการเตือนตั้งแต่')}
+            </span>
+            <input
+              type="time"
+              value={reminder.quietStart}
+              disabled={!reminder.enabled || reminderBusy}
+              onChange={(event) =>
+                setReminder((current) => ({
+                  ...current,
+                  quietStart: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label>
+            <span>{t('Quiet until', 'ถึงเวลา')}</span>
+            <input
+              type="time"
+              value={reminder.quietEnd}
+              disabled={!reminder.enabled || reminderBusy}
+              onChange={(event) =>
+                setReminder((current) => ({
+                  ...current,
+                  quietEnd: event.target.value,
+                }))
+              }
+            />
+          </label>
+        </div>
+        <div className="review-reminder-footer">
+          <small>
+            {t(
+              `Uses ${data.profile.timezone}. The reminder appears when Tradovia is open.`,
+              `ใช้เขตเวลา ${data.profile.timezone} และจะแสดงเมื่อเปิด Tradovia`,
+            )}
+          </small>
+          <button
+            type="button"
+            className="button ink compact"
+            disabled={reminderBusy}
+            onClick={async () => {
+              setReminderBusy(true);
+              setReminderMessage('');
+              const saved = await saveReviewReminder(reminder);
+              setReminderMessage(
+                saved
+                  ? t('Reminder saved', 'บันทึกเวลาเตือนแล้ว')
+                  : t('Could not save. Try again.', 'บันทึกไม่สำเร็จ ลองอีกครั้ง'),
+              );
+              setReminderBusy(false);
+            }}
+          >
+            {reminderBusy
+              ? t('Saving…', 'กำลังบันทึก…')
+              : t('Save reminder', 'บันทึกการเตือน')}
+          </button>
+        </div>
+        {reminderMessage && (
+          <output className="review-reminder-message">{reminderMessage}</output>
+        )}
       </div>
       <div className="panel">
         <h2>{t('Your data, always yours', 'ข้อมูลของคุณ เป็นของคุณเสมอ')}</h2>
@@ -280,17 +411,37 @@ export function AccountViews({
           {t('BILLING & SUBSCRIPTION', 'แพ็กเกจและการชำระเงิน')}
         </span>
         <h2>
-          {data.subscription.plan.toUpperCase()} ·{' '}
+          {data.subscription.plan === 'manual'
+            ? 'FREE'
+            : data.subscription.plan.toUpperCase()}{' '}
+          ·{' '}
           {data.subscription.plan === 'manual'
             ? t('Free', 'ฟรี')
             : data.subscription.status}
         </h2>
         <p className="muted-copy">
           {t(
-            'Your manual workspace remains available without a paid subscription.',
-            'ใช้เวิร์กสเปซแบบบันทึกเองได้ โดยไม่ต้องสมัครแพ็กเกจแบบชำระเงิน',
+            'Your Free workspace remains available without a paid subscription.',
+            'ใช้เวิร์กสเปซ Free ได้โดยไม่ต้องสมัครแพ็กเกจแบบชำระเงิน',
           )}
         </p>
+        {!proAccess && (
+          <div className="plan-usage" aria-label={t('Free plan usage', 'การใช้งานแพ็กเกจ Free')}>
+            {[
+              [t('Trades', 'รายการเทรด'), data.trades.length, FREE_LIMITS.trades],
+              [t('Playbooks', 'Playbook'), data.playbooks?.length || 0, FREE_LIMITS.playbooks],
+              [t('Portfolios', 'พอร์ต'), data.portfolios.length, FREE_LIMITS.portfolios],
+            ].map(([label, used, limit]) => {
+              const value = Math.min(100, (Number(used) / Number(limit)) * 100);
+              return (
+                <div key={String(label)}>
+                  <span><b>{label}</b><small>{used} / {limit}</small></span>
+                  <i aria-hidden="true"><em style={{ width: `${value}%` }} /></i>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="rule-row">
           <span>{t('Renewal', 'ต่ออายุ')}</span>
           <b>
@@ -300,8 +451,8 @@ export function AccountViews({
         </div>
         <p className="muted-copy">
           {t(
-            'Paid upgrades, billing portal and cancellation will activate when Stripe is configured.',
-            'การอัปเกรด จัดการบิล และยกเลิกแพ็กเกจจะเปิดเมื่อเชื่อมต่อ Stripe แล้ว',
+            'Choose a plan below. After subscribing, manage invoices, plan changes and cancellation from the secure Stripe portal.',
+            'เลือกแพ็กเกจด้านล่าง หลังสมัครแล้วคุณจัดการใบเสร็จ เปลี่ยนแพ็กเกจ และยกเลิกได้ผ่านพอร์ทัล Stripe ที่ปลอดภัย',
           )}
         </p>
         <Link
@@ -312,7 +463,8 @@ export function AccountViews({
           {t('View launch plans', 'ดูแพ็กเกจเปิดตัว')}
           <ArrowUpRight size={16} />
         </Link>
-        <BillingControls mode={mode} t={t} />
+        <BillingControls mode={mode} subscription={data.subscription} t={t} />
+        <PlanComparison t={t} compact />
       </div>
       <div className="panel">
         <h2>{t('Account & security', 'บัญชีและความปลอดภัย')}</h2>
@@ -323,18 +475,26 @@ export function AccountViews({
                 'เดโมแยกจากข้อมูลจริงด้วยเซสชันเฉพาะ',
               )
             : t(
-                'Signed in securely through ChatGPT. Email and Google identity adapters are prepared for public launch.',
-                'เข้าสู่ระบบผ่าน ChatGPT อย่างปลอดภัย เตรียมรองรับอีเมลและ Google สำหรับเปิดตัวสาธารณะ',
+                'Signed in securely. Your journal belongs to your personal account.',
+                'เข้าสู่ระบบอย่างปลอดภัย บันทึกการเทรดเป็นข้อมูลของบัญชีคุณ',
               )}
         </p>
-        <Link
-          prefetch={false}
+        <WorkspaceExit
+          demo={mode === 'demo'}
           className="button ghost compact mt-5"
-          href={mode === 'demo' ? '/' : '/signout-with-chatgpt?return_to=/'}
         >
           <LogOut size={16} />
           {t('Leave workspace', 'ออกจากเวิร์กสเปซ')}
-        </Link>
+        </WorkspaceExit>
+        <div className="account-legal-links">
+          <Link prefetch={false} href="/privacy">
+            {t('Privacy policy', 'นโยบายความเป็นส่วนตัว')}
+          </Link>
+          <Link prefetch={false} href="/terms">
+            {t('Terms of service', 'ข้อกำหนดการให้บริการ')}
+          </Link>
+        </div>
+        {mode === 'real' && <DeleteAccount t={t} />}
       </div>
     </div>
   );

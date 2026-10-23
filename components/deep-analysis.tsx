@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { net, money, isTradeReviewed, type Trade } from '@/lib/domain';
 import { TradeTable, type Translate } from './workspace-ui';
 
@@ -15,6 +16,10 @@ export default function DeepAnalysis({
   const [from, setFrom] = useState(''),
     [to, setTo] = useState(''),
     [selection, setSelection] = useState<string | null>(null);
+  const selectionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (selection) selectionRef.current?.scrollIntoView({ block: 'start' });
+  }, [selection]);
   const invalid = Boolean(from && to && from > to);
   const closed = invalid
     ? []
@@ -74,8 +79,9 @@ export default function DeepAnalysis({
       ? groups.get(selection)
       : undefined;
   const table = (rows: { key: string; label: string; rows: Trade[] }[]) => (
-    <div style={{ overflowX: 'auto' }}>
-      <table className="deep-table">
+    <div className="deep-groups">
+      <div className="deep-table-wrap">
+        <table className="deep-table">
         <thead>
           <tr>
             {[
@@ -97,11 +103,13 @@ export default function DeepAnalysis({
               <tr key={g.key}>
                 <td>
                   <button
-                    className="button ghost compact"
+                    type="button"
+                    className="deep-table-open"
+                    aria-pressed={selection === g.key}
                     disabled={!g.rows.length}
                     onClick={() => setSelection(g.key)}
                   >
-                    {g.label} ↗
+                    <span>{g.label}</span><ChevronRight size={17} aria-hidden="true" />
                   </button>
                 </td>
                 <td>{g.rows.length}</td>
@@ -119,9 +127,53 @@ export default function DeepAnalysis({
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
+      <div className="deep-group-cards">
+        {rows.map((g) => {
+          const s = summarize(g.rows);
+          return (
+            <button
+              type="button"
+              className="deep-group-card"
+              key={g.key}
+              aria-pressed={selection === g.key}
+              disabled={!g.rows.length}
+              onClick={() => setSelection(g.key)}
+              aria-label={t(`View trades: ${g.label}`, `ดูรายการเทรด: ${g.label}`)}
+            >
+              <span className="deep-group-card-head">
+                <strong>{g.label}</strong>
+                <ChevronRight size={18} aria-hidden="true" />
+              </span>
+              <span className={`deep-group-pnl ${s.pnl >= 0 ? 'positive' : 'negative'}`}>
+                {g.rows.length ? money(s.pnl) : '—'}
+              </span>
+              <span className="deep-group-card-stats">
+                <span>{g.rows.length} {t('closed', 'ไม้ที่ปิด')}</span>
+                <span>{g.rows.length ? `${((s.wins / g.rows.length) * 100).toFixed(0)}%` : '—'} {t('win rate', 'อัตราชนะ')}</span>
+                <span>{s.r === null ? '—' : `${s.r.toFixed(2)}R`} {t('average', 'เฉลี่ย')}</span>
+              </span>
+              <small>{t('Risk recorded', 'บันทึกความเสี่ยง')} {s.rCount}/{g.rows.length}</small>
+            </button>
+          );
+        })}
+      </div>
+      {!rows.length && <p className="journal-hint">{t('No groups in this period.', 'ยังไม่มีกลุ่มข้อมูลในช่วงนี้')}</p>}
     </div>
   );
+  const selectedTrades = (behaviorGroup: boolean) =>
+    selected && selection?.startsWith('behavior:') === behaviorGroup && (
+      <div className="daily-reflection deep-selection" ref={selectionRef}>
+        <div className="section-heading">
+          <h3>{selected.label} · {selected.rows.length} {t('trades', 'ไม้')}</h3>
+          <button className="button ghost compact" onClick={() => setSelection(null)}>
+            {t('Close list', 'ปิดรายการ')}
+          </button>
+        </div>
+        <TradeTable trades={selected.rows} t={t} onView={onView} />
+      </div>
+    );
   return (
     <section className="panel">
       <h2>Deep Analysis / Insights</h2>
@@ -131,7 +183,7 @@ export default function DeepAnalysis({
           'ใช้เทรดที่ปิดแล้วในพอร์ตที่เลือก แยกเวอร์ชันแผนเพื่อไม่รวมกฎที่เปลี่ยนไปโดยไม่แจ้ง',
         )}
       </p>
-      <div className="actions" style={{ flexWrap: 'wrap', margin: '20px 0' }}>
+      <div className="deep-filters">
         <label>
           {t('From', 'ตั้งแต่')}{' '}
           <input
@@ -235,32 +287,18 @@ export default function DeepAnalysis({
         {t('By Playbook version', 'เปรียบเทียบตามเวอร์ชัน Playbook')}
       </h3>
       {table([...groups].map(([key, g]) => ({ key, ...g })))}
+      {selectedTrades(false)}
       <h3 className="journal-section-title">
         {t('Plan adherence', 'การทำตามแผน')}
       </h3>
       {table(behavior)}
+      {selectedTrades(true)}
       <p className="journal-hint">
         {t(
           'Win rate uses every closed trade; breakeven trades are not wins. Average R uses net P&L ÷ recorded planned risk and excludes missing or zero risk.',
           'อัตราชนะใช้ทุกเทรดที่ปิดแล้ว เทรดเท่าทุนไม่นับเป็นชนะ R เฉลี่ยใช้กำไรสุทธิ ÷ ความเสี่ยงที่บันทึก และไม่รวมไม้ที่ไม่มีความเสี่ยงหรือเป็นศูนย์',
         )}
       </p>
-      {selected && (
-        <div className="daily-reflection">
-          <div className="section-heading">
-            <h3>
-              {selected.label} · {selected.rows.length}
-            </h3>
-            <button
-              className="button ghost compact"
-              onClick={() => setSelection(null)}
-            >
-              {t('Close list', 'ปิดรายการ')}
-            </button>
-          </div>
-          <TradeTable trades={selected.rows} t={t} onView={onView} />
-        </div>
-      )}
     </section>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ChevronRight } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -116,15 +116,21 @@ export function Equity({
         </span>
       </div>
       <div className="equity-chart">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          minHeight={0}
+          initialDimension={{ width: 720, height: 280 }}
+        >
           <AreaChart
             data={s.curve}
             margin={{ top: 20, right: 15, left: 0, bottom: 0 }}
           >
             <defs>
               <linearGradient id="workspaceEquity" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b9b72" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#3b9b72" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--chart-equity)" stopOpacity={0.22} />
+                <stop offset="100%" stopColor="var(--chart-equity)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="var(--border)" vertical={false} />
@@ -155,7 +161,7 @@ export function Equity({
               isAnimationActive={false}
               type="linear"
               dataKey="value"
-              stroke="#3b9b72"
+              stroke="var(--chart-equity)"
               strokeWidth={2}
               fill="url(#workspaceEquity)"
             />
@@ -201,17 +207,18 @@ export function OutcomeDonut({
   const percentages = outcomes.map((outcome) =>
     closed.length ? (outcome.rows.length / closed.length) * 100 : 0,
   );
-  const winEnd = percentages[0];
-  const lossEnd = winEnd + percentages[1];
   const chartLabel = outcomes
     .map(
       (outcome, index) =>
         `${outcome.label} ${outcome.rows.length}, ${percentages[index].toFixed(0)}%`,
     )
     .join('. ');
-  const background = closed.length
-    ? `conic-gradient(var(--positive) 0 ${winEnd}%, var(--negative) ${winEnd}% ${lossEnd}%, var(--muted-foreground) ${lossEnd}% 100%)`
-    : 'conic-gradient(var(--border) 0 100%)';
+  let segmentStart = 0;
+  const segments = percentages.map((share, index) => {
+    const start = segmentStart;
+    segmentStart += share;
+    return { share, start, color: ['var(--positive)', 'var(--negative)', 'var(--muted-foreground)'][index] };
+  });
 
   return (
     <section className="panel outcome-panel">
@@ -220,17 +227,25 @@ export function OutcomeDonut({
         <h2>{t('Winning, losing, and break-even', 'สัดส่วนชนะ แพ้ และเสมอตัว')}</h2>
       </div>
       <div className="outcome-content">
-        <div
-          className="outcome-donut"
-          style={{ background }}
-          role="img"
-          aria-label={chartLabel}
-        >
-          <div className="outcome-donut-center">
+        <figure className="outcome-donut" aria-label={chartLabel}>
+          <svg viewBox="0 0 120 120" width="120" height="120" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border)" strokeWidth="12" />
+            {segments.filter((segment) => segment.share > 0).map((segment, index) => (
+              <circle
+                key={index}
+                cx="60" cy="60" r="48" fill="none"
+                stroke={segment.color} strokeWidth="12" pathLength="100"
+                strokeDasharray={`${segment.share} ${100 - segment.share}`}
+                strokeDashoffset={-segment.start}
+                transform="rotate(-90 60 60)"
+              />
+            ))}
+          </svg>
+          <figcaption className="outcome-donut-center">
             <strong>{closed.length}</strong>
             <span>{t('closed trades', 'ไม้ที่ปิดแล้ว')}</span>
-          </div>
-        </div>
+          </figcaption>
+        </figure>
         <div className="outcome-legend">
           {outcomes.map((outcome, index) => (
             <button
@@ -303,7 +318,7 @@ export function TradeTable({
                     <span>
                       <b>{tr.symbol}</b>
                       <small
-                        className={tr.side === 'LONG' ? 'positive' : 'negative'}
+                        className={tr.side === 'LONG' ? 'trade-long' : 'trade-short'}
                       >
                         {tr.side}
                       </small>
@@ -411,28 +426,33 @@ export function Breakdown({
             x.status === 'CLOSED',
         );
         const s = statistics(rows, 0);
-        return (
-          <div className="breakdown-row" key={key}>
-            <div>
+        const content = (
+          <>
+            <span className="breakdown-row-main">
               <b>{key}</b>
               <small>
                 {s.count} {t('trades', 'ไม้')} · {s.winRate.toFixed(0)}%{' '}
                 {t('win rate', 'อัตราชนะ')}
               </small>
-            </div>
-            <b className={s.pnl >= 0 ? 'positive' : 'negative'}>
-              {money(s.pnl)}
-            </b>
-            {onReview && (
-              <button
-                className="text-button review-source"
-                onClick={() => onReview(key, rows, field)}
-                aria-label={t(`View trades: ${key}`, `ดูรายการเทรด: ${key}`)}
-              >
-                {t('View trades', 'ดูรายการ')} ↗
-              </button>
-            )}
-          </div>
+            </span>
+            <span className="breakdown-row-result">
+              <b className={s.pnl >= 0 ? 'positive' : 'negative'}>{money(s.pnl)}</b>
+              {onReview && <span className="breakdown-row-arrow" aria-hidden="true"><ChevronRight size={18} /></span>}
+            </span>
+          </>
+        );
+        return onReview ? (
+          <button
+            type="button"
+            className="breakdown-row breakdown-row-action"
+            key={key}
+            onClick={() => onReview(key, rows, field)}
+            aria-label={t(`View trades: ${key}`, `ดูรายการเทรด: ${key}`)}
+          >
+            {content}
+          </button>
+        ) : (
+          <div className="breakdown-row" key={key}>{content}</div>
         );
       })}
       {!groups.length && (

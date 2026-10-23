@@ -1,26 +1,47 @@
 export type StripeConfig = {
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRO_MONTHLY_PRICE_ID?: string;
+  STRIPE_PRO_ANNUAL_PRICE_ID?: string;
+  // Legacy monthly alias retained for existing deployments.
   STRIPE_PRO_PRICE_ID?: string;
   STRIPE_ELITE_PRICE_ID?: string;
   APP_ORIGIN?: string;
 };
+export type ResolvedStripeConfig = {
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  APP_ORIGIN: string;
+  proMonthlyPriceId: string;
+  proAnnualPriceId: string;
+  elitePriceId?: string;
+};
 export function requireStripe(c: StripeConfig) {
+  const proMonthlyPriceId =
+    c.STRIPE_PRO_MONTHLY_PRICE_ID?.trim() || c.STRIPE_PRO_PRICE_ID?.trim();
+  const proAnnualPriceId = c.STRIPE_PRO_ANNUAL_PRICE_ID?.trim();
   if (
     !c.STRIPE_SECRET_KEY ||
     !c.STRIPE_WEBHOOK_SECRET ||
     !c.APP_ORIGIN ||
-    !c.STRIPE_PRO_PRICE_ID ||
-    !c.STRIPE_ELITE_PRICE_ID
+    !proMonthlyPriceId ||
+    !proAnnualPriceId
   )
     throw new Error('Stripe is not configured');
   const url = new URL(c.APP_ORIGIN);
   if (url.protocol !== 'https:' && url.hostname !== 'localhost')
     throw new Error('Invalid application origin');
-  return c as Required<StripeConfig>;
+  return {
+    STRIPE_SECRET_KEY: c.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: c.STRIPE_WEBHOOK_SECRET,
+    APP_ORIGIN: c.APP_ORIGIN,
+    proMonthlyPriceId,
+    proAnnualPriceId,
+    elitePriceId: c.STRIPE_ELITE_PRICE_ID?.trim() || undefined,
+  } satisfies ResolvedStripeConfig;
 }
 export async function stripeRequest<T>(
-  config: Required<StripeConfig>,
+  config: ResolvedStripeConfig,
   path: string,
   params?: URLSearchParams,
   idempotencyKey?: string,

@@ -9,12 +9,19 @@ export async function GET(request: Request) {
     let ready = false;
     try {
       requireStripe(env as unknown as StripeConfig);
-      ready = who.mode === 'real';
+      ready = who.mode === 'real' && who.role !== 'owner';
     } catch {
       /* Not configured. */
     }
+    const billing =
+      who.mode === 'real'
+        ? await database()
+            .prepare('SELECT customer_id FROM subscriptions WHERE owner_id=?')
+            .bind(who.id)
+            .first<{ customer_id: string | null }>()
+        : null;
     return Response.json(
-      { ready },
+      { ready, canManage: ready && Boolean(billing?.customer_id) },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (e) {
@@ -27,6 +34,11 @@ export async function POST(request: Request) {
     const who = await owner(request);
     if (who.mode === 'demo')
       throw new ApiError(403, 'Billing is unavailable in the demo');
+    if (who.role === 'owner')
+      throw new ApiError(
+        403,
+        'Owner access is included. No subscription purchase is needed.',
+      );
     let config: ReturnType<typeof requireStripe>;
     try {
       config = requireStripe(env as unknown as StripeConfig);
@@ -37,7 +49,11 @@ export async function POST(request: Request) {
       );
     }
     await initialize(who.id, who.mode);
-    const body = (await request.json()) as { action?: string; plan?: string };
+    const body = (await request.json()) as {
+      action?: string;
+      plan?: string;
+      interval?: string;
+    };
     const row = await database()
       .prepare(
         'SELECT customer_id,subscription_id,payload FROM subscriptions WHERE owner_id=?',
@@ -63,7 +79,8 @@ export async function POST(request: Request) {
     }
     if (
       body.action !== 'checkout' ||
-      !['pro', 'elite'].includes(body.plan ?? '')
+      body.plan !== 'pro' ||
+      !['month', 'year'].includes(body.interval ?? '')
     )
       throw new ApiError(400, 'Invalid billing request');
     if (
@@ -77,9 +94,9 @@ export async function POST(request: Request) {
         'Use the billing portal to change your existing subscription',
       );
     const price =
-      body.plan === 'pro'
-        ? config.STRIPE_PRO_PRICE_ID
-        : config.STRIPE_ELITE_PRICE_ID;
+      body.interval === 'year'
+        ? config.proAnnualPriceId
+        : config.proMonthlyPriceId;
     const params = new URLSearchParams({
       mode: 'subscription',
       'line_items[0][price]': price,
@@ -88,14 +105,15 @@ export async function POST(request: Request) {
       cancel_url: config.APP_ORIGIN + '/workspace#settings',
       client_reference_id: who.id,
       'subscription_data[metadata][owner_id]': who.id,
-      'subscription_data[metadata][plan]': body.plan!,
+      'subscription_data[metadata][plan]': 'pro',
+      'subscription_data[metadata][interval]': body.interval!,
     });
     if (row?.customer_id) params.set('customer', row.customer_id);
     const r = await stripeRequest<{ url: string }>(
       config,
       'checkout/sessions',
       params,
-      `${who.id}:${body.plan}:${Math.floor(Date.now() / 600000)}`,
+      `${who.id}:pro:${body.interval}:${Math.floor(Date.now() / 600000)}`,
     );
     return Response.json({ url: r.url });
   } catch (e) {

@@ -6,10 +6,11 @@ import PreviewAuth from './auth';
 import DailyFlow from './daily-flow';
 import { installPreviewTransport } from './storage';
 import '../app/globals.css';
+import '../app/widget-studio.css';
 import './fonts.css';
 installPreviewTransport();
 const path = location.pathname;
-if (path === '/signout-with-chatgpt') {
+if (path === '/signout-with-chatgpt' || path === '/auth/logout') {
   sessionStorage.removeItem('tradovia.preview.session');
   location.replace('/auth');
 }
@@ -19,11 +20,11 @@ const auth =
   (personal && sessionStorage.getItem('tradovia.preview.session') !== 'active');
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <div
+    {path !== '/' && <div
       style={{
         padding: '7px 16px',
-        background: '#e5eee8',
-        color: '#183e32',
+        background: 'var(--accent)',
+        color: 'var(--accent-foreground)',
         textAlign: 'center',
         fontSize: 12,
         lineHeight: 1.5,
@@ -31,7 +32,7 @@ createRoot(document.getElementById('root')!).render(
     >
       UI/UX Preview · ข้อมูลเดโมเก็บในเบราว์เซอร์นี้เท่านั้น · No live login, payments or
       broker sync
-    </div>
+    </div>}
     {path === '/daily-preview' ? (
       <DailyFlow />
     ) : path === '/' ? (

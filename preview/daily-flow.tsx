@@ -74,10 +74,10 @@ export default function DailyFlow() {
       lang={th ? 'th' : 'en'}
     >
       <header className="daily-header">
-        <a className="brand" href="/">
+        <button className="brand" type="button" onClick={() => location.assign('/')}>
           <span className="brand-mark" aria-hidden="true" />
           tradovia
-        </a>
+        </button>
         <div className="actions">
           <button className="button ghost compact" onClick={() => setTh(!th)}>
             {th ? 'EN' : 'ไทย'}
@@ -88,7 +88,9 @@ export default function DailyFlow() {
           >
             {t('Light / dark', 'สว่าง / มืด')}
           </button>
-          <a href="/demo">{t('Workspace ↗', 'เวิร์กสเปซ ↗')}</a>
+          <button type="button" onClick={() => location.assign('/demo')}>
+            {t('Workspace ↗', 'เวิร์กสเปซ ↗')}
+          </button>
         </div>
       </header>
       <div className="daily-content">
@@ -217,6 +219,10 @@ export default function DailyFlow() {
                   <button
                     key={tr.id}
                     className={`daily-card daily-trade ${selected === tr.id ? 'chosen' : ''}`}
+                    aria-label={t(
+                      `Review ${tr.symbol}, ${tr.id}`,
+                      `ทบทวน ${tr.symbol} รายการ ${tr.id}`,
+                    )}
                     aria-pressed={selected === tr.id}
                     onClick={() => setSelected(tr.id)}
                   >

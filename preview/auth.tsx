@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import {
   ArrowRight,
   ArrowLeft,
@@ -66,7 +66,7 @@ export default function PreviewAuth() {
     if (await hasPreviewWorkspace()) location.assign('/workspace');
     else go('setup');
   }
-  async function submit(event: FormEvent) {
+  async function submit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setBusy(true);
@@ -138,10 +138,10 @@ export default function PreviewAuth() {
       lang={th ? 'th' : 'en'}
     >
       <header className="auth-nav">
-        <a className="brand" href="/">
+        <button className="brand" type="button" onClick={() => location.assign('/')}>
           <span className="brand-mark" aria-hidden="true" />
           tradovia
-        </a>
+        </button>
         <div className="actions">
           <button className="text-button" onClick={() => setTh(!th)}>
             {th ? 'EN' : 'TH'}
@@ -187,10 +187,14 @@ export default function PreviewAuth() {
               );
             })}
           </div>
-          <a href="/demo" className="auth-demo-link">
+          <button
+            type="button"
+            className="auth-demo-link"
+            onClick={() => location.assign('/demo')}
+          >
             {t('Take a look around first', 'ลองสำรวจเดโมก่อน')}{' '}
             <ArrowRight size={16} />
-          </a>
+          </button>
         </aside>
         <section className="auth-form-card" aria-labelledby="auth-title">
           {screen === 'setup' ? (
@@ -253,7 +257,7 @@ export default function PreviewAuth() {
                 <input
                   required
                   maxLength={60}
-                  autoComplete="nickname"
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t(
@@ -546,7 +550,9 @@ export default function PreviewAuth() {
       </div>
       <footer className="auth-footer">
         {t('Trade with intention.', 'เทรดอย่างมีเป้าหมาย')}
-        <a href="/">{t('Back to Tradovia', 'กลับหน้า Tradovia')} ↗</a>
+        <button type="button" onClick={() => location.assign('/')}>
+          {t('Back to Tradovia', 'กลับหน้า Tradovia')} ↗
+        </button>
       </footer>
     </main>
   );

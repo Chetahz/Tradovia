@@ -1,12 +1,15 @@
 import { imageBucket, database } from '@/db';
 import { owner, checkOrigin, apiFailure, ApiError } from '@/lib/server-auth';
-import { initialize } from '@/lib/repository';
+import { initialize, readWorkspace } from '@/lib/repository';
 import { readBoundedBody } from '@/lib/request-body';
+import { planLimits, PRO_LIMITS } from '@/lib/plan-access';
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
     const who = await owner(request);
     await initialize(who.id, who.mode);
+    const workspace = await readWorkspace(who.id);
+    const limits = who.mode === 'demo' ? PRO_LIMITS : planLimits(workspace.subscription);
     const raw = await readBoundedBody(request, 5500000);
     const form = await new Response(raw, {
       headers: { 'Content-Type': request.headers.get('content-type') ?? '' },
@@ -37,7 +40,11 @@ export async function POST(request: Request) {
       .prepare('SELECT COUNT(*) as n FROM trade_images WHERE owner_id=?')
       .bind(who.id)
       .first<{ n: number }>();
-    if ((count?.n ?? 0) >= 100) throw new ApiError(409, 'Image limit reached');
+    if ((count?.n ?? 0) >= limits.images)
+      throw new ApiError(
+        409,
+        `Image limit reached. Free includes 10 chart images; Pro includes up to ${limits.images}.`,
+      );
     const id = crypto.randomUUID(),
       key = who.id + '/' + id;
     await imageBucket().put(key, bytes, {

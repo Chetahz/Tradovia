@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tradovia-app",
+  "account_id": "b067e82f171124df1a6a9ead29f7dc18",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "tradovia-db",
+    "database_id": "b77b3d60-4714-4dd0-a2d4-13d86208925d",
+    "migrations_dir": "drizzle"
+  }],
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "tradovia-images" }],
+  "vars": {
+    "APP_ORIGIN": "https://tradovia-app.rachatakaewthong.workers.dev",
+    "AUTH_ISSUER": "https://tradovia.jp.auth0.com/",
+    "AUTH_CLIENT_ID": "C6zcP46IHzg4QyPkIZCXBuYY2ehj4m5u",
+    "STRIPE_PRO_MONTHLY_PRICE_ID": "price_1URGUe1GAQgnZ2VnyK2OgSTh",
+    "STRIPE_PRO_ANNUAL_PRICE_ID": "price_1URGYk1GAQgnZ2VnXTEEdtFY"
+  }
+}

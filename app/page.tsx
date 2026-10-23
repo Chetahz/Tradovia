@@ -9,241 +9,156 @@ import {
   Upload,
   Sun,
   Moon,
+  ShieldCheck,
+  LockKeyhole,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import LaunchPricing from '@/components/launch-pricing';
-import { LandingGuide, LandingFAQ } from '@/components/landing-guide';
+import { LandingFAQ } from '@/components/landing-guide';
+import LandingProductPreview, {
+  MobileCapturePreview,
+} from '@/components/landing-product-preview';
+import LandingScrollReveal from '@/components/landing-scroll-reveal';
 export default function Home() {
   const [th, setTh] = useState(false),
     [dark, setDark] = useState(false);
   useEffect(() => {
-    setTh(localStorage.getItem('tradovia.language') === 'th');
-    setDark(localStorage.getItem('tradovia.theme') === 'dark');
+    const restorePreferences = window.setTimeout(() => {
+      setTh(localStorage.getItem('tradovia.language') === 'th');
+      setDark(localStorage.getItem('tradovia.theme') === 'dark');
+    }, 0);
+    return () => window.clearTimeout(restorePreferences);
   }, []);
+  useEffect(() => {
+    document.documentElement.lang = th ? 'th' : 'en';
+  }, [th]);
   const t = (a: string, b: string) => (th ? b : a);
   return (
-    <div className={`landing ${dark ? 'dark' : ''}`} lang={th ? 'th' : 'en'}>
-      <header className="land-nav">
-        <Link prefetch={false} href="/" className="brand">
-          <span className="brand-mark" aria-hidden="true" />
-          tradovia
-        </Link>
-        <nav>
-          <Link prefetch={false} href="#workspace">
-            {t('Workspace', 'เวิร์กสเปซ')}
+    <div
+      className={`landing landing-aligned ${dark ? 'dark' : ''}`}
+      lang={th ? 'th' : 'en'}
+    >
+      <LandingScrollReveal />
+      <div className="cinematic-intro">
+        <header className="land-nav">
+          <Link prefetch={false} href="/" className="brand">
+            <span className="brand-mark" aria-hidden="true" />
+            tradovia
           </Link>
-          <Link prefetch={false} href="#features">
-            {t('Why Tradovia', 'ทำไมต้อง Tradovia')}
-          </Link>
-          <Link prefetch={false} href="#pricing">
-            {t('Pricing', 'แพ็กเกจ')}
-          </Link>
-          <Link prefetch={false} href="#faq">
-            {t('FAQ', 'คำถามที่พบบ่อย')}
-          </Link>
-        </nav>
-        <div className="actions">
-          <button
-            className="icon-button"
-            onClick={() => {
-              setDark(!dark);
-              localStorage.setItem('tradovia.theme', dark ? 'light' : 'dark');
-            }}
-            aria-label="Toggle theme"
-          >
-            {dark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button
-            className="text-button"
-            onClick={() => {
-              setTh(!th);
-              localStorage.setItem('tradovia.language', th ? 'en' : 'th');
-            }}
-          >
-            {th ? 'EN' : 'TH'}
-          </button>
-          <Link prefetch={false} className="text-button sign-in" href="/auth">
-            {t('Sign in', 'เข้าสู่ระบบ')}
-          </Link>
-          <Link
-            prefetch={false}
-            className="button ink"
-            href="/auth?view=signup"
-          >
-            {t('Get started', 'เริ่มต้นใช้งาน')}
-            <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </header>
-      <section className="hero">
-        <div className="eyebrow">
-          <span className="status-dot" />
-          {t('YOUR TRADING. CONNECTED.', 'ทุกส่วนของการเทรด เชื่อมถึงกัน')}
-        </div>
-        <h1>
-          {t('A clearer mind.', 'มองชัดขึ้น')}
-          <br />
-          {t('A stronger edge.', 'เทรดอย่างมีระบบ')}
-        </h1>
-        <p>
-          {t(
-            'Your entire trading process, in one calm workspace.',
-            'จัดการทุกขั้นตอนการเทรดในพื้นที่เดียว',
-          )}
-          <br />
-          {t(
-            'Plan with intention. Execute with discipline. Grow with insight.',
-            'วางแผนอย่างมั่นใจ รักษาวินัย และเรียนรู้จากข้อมูลจริง',
-          )}
-        </p>
-        <div className="hero-actions">
-          <Link
-            prefetch={false}
-            href="/auth?view=signup"
-            className="button ink"
-          >
-            {t('Build your workspace', 'สร้างเวิร์กสเปซของคุณ')}
-            <ArrowUpRight size={18} />
-          </Link>
-          <Link prefetch={false} href="/demo" className="button ghost">
-            {t('Explore the live demo', 'ลองใช้งานเดโม')}
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-        <div className="hero-note">
-          {t(
-            'Journal manually or import an MT5 report. No broker connection required.',
-            'บันทึกเองหรือนำเข้ารายงาน MT5 ได้ โดยไม่ต้องเชื่อมต่อโบรกเกอร์',
-          )}
-        </div>
-        <div id="workspace" className="product-preview">
-          <div className="preview-side">
-            <Link prefetch={false} className="brand" href="/demo">
-              <span className="brand-mark" aria-hidden="true" />
-              tradovia
+          <nav>
+            <Link prefetch={false} href="#workspace">
+              {t('Workspace', 'เวิร์กสเปซ')}
             </Link>
-            <small>{t('WORKSPACE', 'เวิร์กสเปซ')}</small>
-            {[
-              t('Overview', 'ภาพรวม'),
-              t('Trade Journal', 'บันทึกการเทรด'),
-              t('Playbook', 'แผนการเทรด'),
-              t('Analytics', 'วิเคราะห์ผล'),
-              t('Trading Calendar', 'ปฏิทินการเทรด'),
-            ].map((x, i) => (
-              <div className={i === 0 ? 'selected' : ''} key={x}>
-                <ChartNoAxesCombined size={15} />
-                {x}
-              </div>
-            ))}
-            <span className="preview-account">
-              {t('Demo Portfolio', 'พอร์ตตัวอย่าง')}{' '}
-              <span className="status-dot" />
-            </span>
+            <Link prefetch={false} href="#features">
+              {t('Why Tradovia', 'ทำไมต้อง Tradovia')}
+            </Link>
+            <Link prefetch={false} href="#pricing">
+              {t('Pricing', 'แพ็กเกจ')}
+            </Link>
+            <Link prefetch={false} href="#faq">
+              {t('FAQ', 'คำถามที่พบบ่อย')}
+            </Link>
+          </nav>
+          <div className="actions">
+            <button
+              className="icon-button"
+              onClick={() => {
+                setDark(!dark);
+                localStorage.setItem('tradovia.theme', dark ? 'light' : 'dark');
+              }}
+              aria-label="Toggle theme"
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              className="text-button"
+              onClick={() => {
+                setTh(!th);
+                localStorage.setItem('tradovia.language', th ? 'en' : 'th');
+              }}
+            >
+              {th ? 'EN' : 'TH'}
+            </button>
+            <Link prefetch={false} className="text-button sign-in" href="/auth">
+              {t('Sign in', 'เข้าสู่ระบบ')}
+            </Link>
+            <Link
+              prefetch={false}
+              className="button ink"
+              href="/demo"
+            >
+              {t('Explore demo', 'ลองเดโม')}
+              <ArrowUpRight size={16} />
+            </Link>
           </div>
-          <div className="preview-main">
-            <div className="preview-top">
-              {t('WORKSPACE / OVERVIEW', 'เวิร์กสเปซ / ภาพรวม')}
-              <span className="pill">
-                {t('Interactive demo', 'เดโมแบบโต้ตอบ')}
-              </span>
+        </header>
+        <section className="hero cinematic-hero">
+          <div className="cinematic-copy">
+            <div className="eyebrow reveal-delay-1" data-reveal>
+              <span className="status-dot" />
+              {t('YOUR TRADING WORKSPACE', 'พื้นที่ของทุกการเทรด และการเติบโต')}
             </div>
-            <h2>
-              {t('Your next chapter starts here.', 'เริ่มบทใหม่ของการเทรดที่นี่')}
-            </h2>
-            <p>
+            <h1 className="reveal-delay-2" data-reveal>
+              {t('Every trade.', 'ทุกการเทรด')}
+              <br />
+              <span>{t('A clearer you.', 'เข้าใจตัวเองชัดขึ้น')}</span>
+            </h1>
+            <p className="reveal-delay-3" data-reveal>
               {t(
-                'Every trade tells a story. See the bigger picture.',
-                'ทุกไม้มีเรื่องราว มองให้เห็นภาพรวม',
+                'Plan, capture and review in one calm workspace. See your trading days, revisit your charts, and understand the decisions behind your results.',
+                'วางแผน จดเทรด และทบทวนในพื้นที่เดียว เห็นวันที่คุณเทรด ย้อนดูกราฟ และเข้าใจการตัดสินใจที่อยู่เบื้องหลังผลลัพธ์',
               )}
             </p>
-            <div className="preview-metrics">
-              {[
-                [t('Net P&L', 'กำไร/ขาดทุนสุทธิ'), '+$1,284.00'],
-                [t('Win rate', 'อัตราชนะ'), '62.5%'],
-                ['Profit factor', '2.18'],
-              ].map((x) => (
-                <div key={x[0]}>
-                  <span>{x[0]}</span>
-                  <strong>{x[1]}</strong>
-                  <small>
-                    {t('Illustrative demo preview', 'ข้อมูลตัวอย่างประกอบ')}
-                  </small>
-                </div>
-              ))}
-            </div>
-            <div className="preview-chart">
-              <div className="section-heading">
-                <b>
-                  {t(
-                    'The progress behind the process',
-                    'ความก้าวหน้าจากกระบวนการที่ดี',
-                  )}
-                </b>
-                <span className="positive">+12.84%</span>
-              </div>
-              <svg
-                viewBox="0 0 800 175"
-
-                aria-label={t(
-                  'Illustrative equity curve',
-                  'ตัวอย่างกราฟมูลค่าพอร์ต',
-                )}
+            <div className="hero-actions reveal-delay-4" data-reveal>
+              <Link
+                prefetch={false}
+                href="/demo"
+                className="button ink"
               >
-                <defs>
-                  <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#45ac84" stopOpacity=".18" />
-                    <stop offset="100%" stopColor="#45ac84" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 150 L35 144 L65 153 L100 134 L130 140 L170 115 L210 128 L240 109 L270 117 L310 78 L350 87 L385 65 L425 80 L460 54 L500 64 L540 41 L580 50 L620 23 L660 31 L700 16 L740 28 L800 8 V175 H0Z"
-                  fill="url(#eq)"
-                />
-                <path
-                  d="M0 150 L35 144 L65 153 L100 134 L130 140 L170 115 L210 128 L240 109 L270 117 L310 78 L350 87 L385 65 L425 80 L460 54 L500 64 L540 41 L580 50 L620 23 L660 31 L700 16 L740 28 L800 8"
-                  fill="none"
-                  stroke="#329b75"
-                  strokeWidth="2.5"
-                />
-              </svg>
-              <div className="chart-axis">
-                {[1, 2, 3, 4].map((week) => (
-                  <span key={week}>
-                    {t('WEEK', 'สัปดาห์')} 0{week}
-                  </span>
-                ))}
-              </div>
+                {t('Explore the live demo', 'ลองใช้งานเดโม')}
+                <ArrowUpRight size={18} />
+              </Link>
+              <Link prefetch={false} href="#features" className="button ghost">
+                {t('See how it works', 'ดูวิธีการใช้งาน')}
+                <ArrowRight size={18} />
+              </Link>
             </div>
             <div
-              className="preview-workflow"
-              aria-label={t('Tradovia workflow', 'ขั้นตอนการใช้งาน Tradovia')}
+              className="hero-proof reveal-delay-5"
+              data-reveal
+              aria-label={t('Product assurances', 'ข้อมูลสำคัญของผลิตภัณฑ์')}
             >
-              {[
-                ['01', t('Plan', 'วางแผน')],
-                ['02', t('Record', 'บันทึก')],
-                ['03', t('Review', 'ทบทวน')],
-                ['04', t('Improve', 'พัฒนา')],
-              ].map(([number, label]) => (
-                <span key={number}>
-                  <small>{number}</small>
-                  {label}
-                </span>
-              ))}
+              <span>
+                <ShieldCheck size={15} />
+                {t('No broker connection', 'ไม่ต้องเชื่อมโบรกเกอร์')}
+              </span>
+              <span>
+                <LockKeyhole size={15} />
+                {t('Private account workspace', 'ข้อมูลแยกตามบัญชี')}
+              </span>
+              <span>
+                <Upload size={15} />
+                {t('MT5 report import', 'นำเข้ารายงาน MT5')}
+              </span>
             </div>
           </div>
+        </section>
+        <div className="product-stage">
+          <LandingProductPreview th={th} />
         </div>
-      </section>
-      <div className="asset-strip">
+      </div>
+      <div className="asset-strip" data-reveal>
         <span>{t('ONE WORKSPACE. EVERY MARKET.', 'พื้นที่เดียว สำหรับทุกตลาด')}</span>
         {['Forex', 'Metals', 'Indices', 'Crypto', 'Equities'].map((x) => (
           <b key={x}>{x}</b>
         ))}
       </div>
+      <MobileCapturePreview th={th} />
       <section id="features" className="land-section">
-        <div className="eyebrow">
+        <div className="eyebrow" data-reveal>
           {t('LESS FRICTION. MORE FOCUS.', 'จัดการง่ายขึ้น โฟกัสได้มากขึ้น')}
         </div>
-        <h2>
+        <h2 className="reveal-delay-1" data-reveal>
           {t('Built around the way', 'ออกแบบให้เข้ากับ')}
           <br />
           {t('you trade.', 'วิธีที่คุณเทรด')}
@@ -252,42 +167,42 @@ export default function Home() {
           {[
             {
               icon: BookOpen,
-              en: 'Turn rules into a Playbook.',
-              th: 'เปลี่ยนกฎให้เป็น Playbook',
-              desc: 'Build reusable entry, exit and risk checklists. Attach the right version to every trade.',
-              td: 'สร้างเช็กลิสต์เข้า ออก และความเสี่ยง แล้วผูกเวอร์ชันของแผนกับทุกการเทรด',
-              link: '/demo#playbook',
-              label: t('PLAN', 'วางแผน'),
+              en: 'Judge the decision, not the outcome.',
+              th: 'วัดการตัดสินใจ ไม่ใช่ดูแค่ผลลัพธ์',
+              desc: 'Separate good wins, good losses, bad wins and bad losses so luck does not hide a broken process.',
+              td: 'แยกชนะตามแผน แพ้ตามแผน ชนะนอกแผน และแพ้นอกแผน เพื่อไม่ให้โชคบดบังกระบวนการที่ผิด',
+              link: '/demo#analytics',
+              label: t('DECIDE', 'ตัดสินใจ'),
             },
             {
               icon: Upload,
-              en: 'Bring trades in, your way.',
-              th: 'นำเข้าข้อมูลในแบบของคุณ',
-              desc: 'Record manually or preview an MT5 XLSX, HTML or Tradovia CSV before importing.',
-              td: 'บันทึกเอง หรือตรวจรายงาน MT5 แบบ XLSX, HTML และ CSV ก่อนยืนยันนำเข้า',
+              en: 'Capture a trade before focus fades.',
+              th: 'จดเทรดให้ทัน ก่อนเหตุผลจะเลือนหาย',
+              desc: 'Use the mobile quick flow, save the essentials first and add the deeper review when the trade is done.',
+              td: 'ใช้ขั้นตอนสั้นบนมือถือ เก็บข้อมูลสำคัญก่อน แล้วค่อยเติมการทบทวนเชิงลึกหลังจบเทรด',
               link: '/demo#journal',
               label: t('CAPTURE', 'บันทึก'),
             },
             {
               icon: Images,
-              en: 'Review the chart, not just the number.',
-              th: 'ทบทวนกราฟ มากกว่าดูแค่ตัวเลข',
-              desc: 'Keep before-and-after chart images together. Browse the gallery and return to the source trade.',
-              td: 'เก็บภาพกราฟก่อนเข้าและหลังจบไว้ด้วยกัน เปิดดูในแกลเลอรีและย้อนกลับไปยังเทรดต้นทาง',
-              link: '/demo#journal',
-              label: t('REVIEW', 'ทบทวน'),
+              en: 'Find where rules leak R.',
+              th: 'เห็นชัดว่าการหลุดกฎเสีย R ตรงไหน',
+              desc: 'Compare in-plan and outside-plan results, then open the exact trades behind the difference.',
+              td: 'เปรียบเทียบผลลัพธ์ในแผนกับนอกแผน และเปิดดูรายการเทรดจริงที่ทำให้ผลต่างเกิดขึ้น',
+              link: '/demo#analytics',
+              label: t('DIAGNOSE', 'วิเคราะห์'),
             },
             {
               icon: ChartNoAxesCombined,
-              en: 'See the behavior behind results.',
-              th: 'เห็นพฤติกรรมที่อยู่เบื้องหลังผลลัพธ์',
-              desc: 'Compare Playbooks, sessions, risk and outcomes. Open the exact trades behind every insight.',
-              td: 'เปรียบเทียบ Playbook ช่วงเวลา ความเสี่ยง และผลลัพธ์ พร้อมเปิดดูเทรดจริงเบื้องหลังทุก Insight',
+              en: 'Turn the week into one next focus.',
+              th: 'เปลี่ยนทั้งสัปดาห์ให้เหลือหนึ่งเรื่องที่ควรโฟกัส',
+              desc: 'Use the weekly review to keep what worked, isolate the recurring mistake and choose the next rule to practice.',
+              td: 'ใช้สรุปรายสัปดาห์เพื่อรักษาสิ่งที่ทำได้ดี แยกข้อผิดพลาดซ้ำ และเลือกกฎเดียวไปฝึกต่อ',
               link: '/demo#analytics',
               label: t('IMPROVE', 'พัฒนา'),
             },
           ].map((x, i) => (
-            <article className="feature-card" key={x.en}>
+            <article className="feature-card" data-reveal key={x.en}>
               <span className="feature-number">
                 0{i + 1} · {x.label}
               </span>
@@ -302,21 +217,19 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <section className="manifesto">
+      <section className="manifesto decision-manifesto" data-reveal>
         <div className="eyebrow">
           {t('YOUR EDGE IS IN YOUR PROCESS', 'ความได้เปรียบ เริ่มที่กระบวนการ')}
         </div>
         <h2>
-          {t('More than a journal.', 'มากกว่าสมุดบันทึก')}
+          {t('Results show what happened.', 'ผลลัพธ์บอกว่าเกิดอะไรขึ้น')}
           <br />
-          <span>
-            {t('Your trading operating system.', 'ระบบจัดการการเทรดของคุณ')}
-          </span>
+          <span>{t('Decisions explain why.', 'การตัดสินใจบอกว่าทำไม')}</span>
         </h2>
         <p>
           {t(
-            'From the first idea to the final review. Everything in its place.',
-            'ตั้งแต่ไอเดียแรก จนถึงการทบทวน ทุกอย่างอยู่ในที่เดียว',
+            'Tradovia connects the plan, the trade and the review so the next change comes from evidence.',
+            'Tradovia เชื่อมแผน การเทรด และการทบทวน เพื่อให้สิ่งที่ปรับครั้งต่อไปมาจากหลักฐานจริง',
           )}
         </p>
         <Link prefetch={false} className="button ink" href="/demo">
@@ -324,7 +237,6 @@ export default function Home() {
           <ArrowUpRight size={18} />
         </Link>
       </section>
-      <LandingGuide th={th} />
       <LaunchPricing th={th} />
       <LandingFAQ th={th} />
       <footer>
@@ -333,6 +245,12 @@ export default function Home() {
         </Link>
         <p>{t('Trade with intention.', 'เทรดอย่างมีเป้าหมาย')}</p>
         <span>© {new Date().getFullYear()} Tradovia</span>
+        <Link prefetch={false} href="/privacy">
+          {t('Privacy', 'ความเป็นส่วนตัว')}
+        </Link>
+        <Link prefetch={false} href="/terms">
+          {t('Terms', 'ข้อกำหนด')}
+        </Link>
         <Link prefetch={false} href="/demo">
           {t('Explore demo', 'ลองเดโม')} ↗
         </Link>

@@ -1,0 +1,11 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tradovia-mt5-poller",
+  "account_id": "b067e82f171124df1a6a9ead29f7dc18",
+  "main": "mt5-poller.ts",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "tradovia-db", "database_id": "b77b3d60-4714-4dd0-a2d4-13d86208925d" }]
+}

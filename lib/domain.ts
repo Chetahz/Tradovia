@@ -37,7 +37,7 @@ export type Trade = {
   notes: string;
   imageIds: string[];
   importRef?: {
-    format: 'MT5';
+    format: 'MT5' | 'BROKER';
     positionId: string;
     brokerSymbol: string;
     closeDate: string;
@@ -76,21 +76,36 @@ export type Connection = {
   status: 'not_configured' | 'disconnected' | 'error' | 'connected';
   lastSync: string | null;
   error: string | null;
+  login?: string | null;
+  server?: string | null;
+  metaapiId?: string | null;
+  metaapiTransactionId?: string | null;
+  provisioning?: boolean;
+  syncCursor?: string | null;
+  checkedAt?: string | null;
 };
 export type WorkspaceData = {
   playbooks?: Playbook[];
+  dailyCheckins?: import('./daily-checkin').DailyCheckin[];
   portfolios: Portfolio[];
   accounts: Account[];
   trades: Trade[];
   goals: Goal[];
   rules: Rule[];
   connections: Connection[];
-  profile: { name: string; timezone: string; watchlist?: string[] };
+  profile: {
+    name: string;
+    timezone: string;
+    watchlist?: string[];
+    avatarVersion?: string;
+    reviewReminder?: import('./review-reminder').ReviewReminder;
+  };
   subscription: {
     plan: 'manual' | 'pro' | 'elite';
     status: string;
     renewal: string | null;
     cancelAtPeriodEnd: boolean;
+    interval?: 'month' | 'year' | null;
   };
 };
 export const money = (n: number) =>
@@ -317,7 +332,7 @@ export function validateTrade(value: unknown): Trade {
   const t = value as Trade;
   if (!/^[a-zA-Z0-9_-]{1,80}$/.test(t.id) || typeof t.accountId !== 'string')
     throw new Error('Invalid trade ID');
-  if (typeof t.symbol !== 'string' || !/^[A-Z0-9.:/_-]{1,24}$/.test(t.symbol))
+  if (typeof t.symbol !== 'string' || !/^[A-Z0-9#.+:/_-]{1,40}$/.test(t.symbol))
     throw new Error('Invalid symbol');
   if (
     !['LONG', 'SHORT'].includes(t.side) ||
@@ -366,7 +381,7 @@ export function validateTrade(value: unknown): Trade {
     const ref = t.importRef;
     if (
       !ref ||
-      ref.format !== 'MT5' ||
+      !['MT5', 'BROKER'].includes(ref.format) ||
       typeof ref.positionId !== 'string' ||
       !/^[a-zA-Z0-9_-]{1,80}$/.test(ref.positionId) ||
       typeof ref.brokerSymbol !== 'string' ||
@@ -468,6 +483,33 @@ export function validateTrade(value: unknown): Trade {
   };
 }
 export function demoData(now = new Date()): WorkspaceData {
+  const demoPlaybooks: Playbook[] = [
+    {
+      id: 'demo-playbook-pullback',
+      name: '1H pullback + trend',
+      technique: 'FVG + MSS',
+      entry:
+        'Wait for price to return to the planned zone and confirm direction.',
+      exit: 'Take profit at the next liquidity area or the planned R target.',
+      risk: 'Risk no more than 1% and place the stop beyond structure.',
+      checklist:
+        '4H trend is clear\nPrice is at the planned zone\nEntry has confirmation\nRisk stays within the daily limit',
+      archived: false,
+      version: 3,
+    },
+    {
+      id: 'demo-playbook-sweep',
+      name: 'Session liquidity sweep',
+      technique: 'Sweep + displacement',
+      entry: 'Enter only after a session sweep and a confirmed displacement.',
+      exit: 'Scale out at internal liquidity and close at the external target.',
+      risk: 'One attempt per session with a maximum planned risk of 1%.',
+      checklist:
+        'Trading inside the planned session\nLiquidity was swept\nDisplacement is confirmed\nNo high-impact news is imminent',
+      archived: false,
+      version: 2,
+    },
+  ];
   const outcomes = [
     180, -100, 240, 85, -125, 310, -90, 165, 215, -105, 0, 280, -140, 190, 320,
     -100, 155, 210, -115, 260, -80, 175, 305, -120,
@@ -481,6 +523,14 @@ export function demoData(now = new Date()): WorkspaceData {
     d.setDate(d.getDate() + i);
     if (d > now) d.setMonth(d.getMonth() - 1);
     const gold = i % 3 === 0;
+    const playbook = demoPlaybooks[i % demoPlaybooks.length];
+    const reviewed = i % 5 !== 0;
+    const adherence = reviewed
+      ? (['yes', 'yes', 'partial', 'no', 'yes', 'no'][i % 6] as
+          | 'yes'
+          | 'partial'
+          | 'no')
+      : '';
     return {
       id: `demo-trade-${i}`,
       accountId: i % 4 === 0 ? 'demo-account-2' : 'demo-account-1',
@@ -503,9 +553,38 @@ export function demoData(now = new Date()): WorkspaceData {
         'Screenshot and execution review to follow.',
       ][i % 3],
       imageIds: [],
+      ...(reviewed
+        ? {
+            playbook,
+            adherence,
+            review: {
+              checklist: planChecklist(playbook).map((item, index) => ({
+                ...item,
+                answer:
+                  adherence === 'no' && index === 1
+                    ? ('no' as const)
+                    : ('yes' as const),
+              })),
+              emotion:
+                adherence === 'no'
+                  ? ('fomo' as const)
+                  : adherence === 'partial'
+                    ? ('anxious' as const)
+                    : ('calm' as const),
+              lesson:
+                adherence === 'no'
+                  ? 'Pause before entry and confirm the checklist one more time.'
+                  : 'Keep the same entry process and review execution quality.',
+              completedAt: new Date(
+                `${dateKey(d)}T${String(10 + (i % 8)).padStart(2, '0')}:00:00`,
+              ).toISOString(),
+            },
+          }
+        : {}),
     };
   });
   return {
+    playbooks: demoPlaybooks,
     portfolios: [
       {
         id: 'demo-portfolio',
@@ -559,6 +638,7 @@ export function demoData(now = new Date()): WorkspaceData {
   };
 }
 export const emptyData = (): WorkspaceData => ({
+  dailyCheckins: [],
   portfolios: [],
   accounts: [],
   trades: [],

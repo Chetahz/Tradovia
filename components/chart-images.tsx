@@ -143,7 +143,7 @@ function ZoomableChart({
   previous?: () => void;
   next?: () => void;
 }) {
-  const stage = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLButtonElement>(null);
   const position = useRef<Position>(initial);
   const [view, setView] = useState<Position>(initial);
   const [failed, setFailed] = useState(false);
@@ -213,7 +213,7 @@ function ZoomableChart({
       distance: Math.hypot(a.x - b.x, a.y - b.y),
     };
   };
-  const move = (event: PointerEvent<HTMLDivElement>) => {
+  const move = (event: PointerEvent<HTMLButtonElement>) => {
     if (!points.current.has(event.pointerId) || !gesture.current) return;
     points.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     const values = [...points.current.values()],
@@ -239,7 +239,7 @@ function ZoomableChart({
       y: y - (y - start.view.y) * ratio + center.y - start.center.y,
     });
   };
-  const end = (event: PointerEvent<HTMLDivElement>) => {
+  const end = (event: PointerEvent<HTMLButtonElement>) => {
     points.current.delete(event.pointerId);
     anchor();
   };
@@ -293,11 +293,10 @@ function ZoomableChart({
           <ChevronRight size={21} />
         </button>
       </div>
-      <div
+      <button
+        type="button"
         ref={stage}
         className="chart-zoom-stage"
-        tabIndex={0}
-        role="group"
         aria-label={t(
           'Zoomable chart. Use plus, minus, zero to reset, or arrow keys to pan.',
           'ภาพซูมได้ ใช้ปุ่มบวก ลบ ศูนย์เพื่อคืนขนาด และลูกศรเพื่อเลื่อนภาพ',
@@ -355,9 +354,9 @@ function ZoomableChart({
         onLostPointerCapture={end}
       >
         {!loaded && !failed && (
-          <p className="chart-image-message" role="status">
+          <output className="chart-image-message">
             {t('Loading image…', 'กำลังโหลดภาพ…')}
-          </p>
+          </output>
         )}
         {failed && (
           <p className="chart-image-message" role="alert">
@@ -385,7 +384,7 @@ function ZoomableChart({
             visibility: loaded && !failed ? 'visible' : 'hidden',
           }}
         />
-      </div>
+      </button>
     </>
   );
 }

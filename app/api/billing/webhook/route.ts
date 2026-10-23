@@ -7,6 +7,7 @@ import {
   stripeRequest,
   type StripeConfig,
 } from '@/lib/stripe';
+import { recordOpsEvent } from '@/lib/admin';
 type Subscription = {
   id: string;
   customer: string;
@@ -85,19 +86,34 @@ export async function POST(request: Request) {
         .prepare('SELECT id FROM users WHERE id=? AND mode=?')
         .bind(ownerId, 'real')
         .first())
-    )
+    ) {
+      await recordOpsEvent({
+        category: 'billing',
+        severity: 'warning',
+        status: 'open',
+        message: 'Stripe webhook อ้างถึงบัญชีที่ไม่พบใน Tradovia',
+        metadata: { eventType: event.type },
+      }).catch(() => undefined);
       return Response.json(
         { error: 'Unknown subscription owner' },
         { status: 409 },
       );
+    }
     const price = sub.items.data[0]?.price.id;
     const paid = ['active', 'trialing'].includes(sub.status);
     const plan =
-      paid && price === config.STRIPE_PRO_PRICE_ID
+      paid &&
+      [config.proMonthlyPriceId, config.proAnnualPriceId].includes(price)
         ? 'pro'
-        : paid && price === config.STRIPE_ELITE_PRICE_ID
+        : paid && config.elitePriceId && price === config.elitePriceId
           ? 'elite'
           : 'manual';
+    const interval =
+      price === config.proAnnualPriceId
+        ? 'year'
+        : price === config.proMonthlyPriceId
+          ? 'month'
+          : null;
     const renewal =
       sub.current_period_end ?? sub.items.data[0]?.current_period_end;
     const payload = JSON.stringify({
@@ -105,6 +121,7 @@ export async function POST(request: Request) {
       status: sub.status,
       renewal: renewal ? new Date(renewal * 1000).toISOString() : null,
       cancelAtPeriodEnd: sub.cancel_at_period_end,
+      interval,
     });
     const writes = [
       db
@@ -114,9 +131,9 @@ export async function POST(request: Request) {
         .bind(ownerId, sub.customer, sub.id, payload),
       db
         .prepare(
-          'INSERT OR IGNORE INTO webhook_events(id,created_at) VALUES(?,?)',
+          'INSERT OR IGNORE INTO webhook_events(id,created_at,event_type,status) VALUES(?,?,?,?)',
         )
-        .bind(event.id, Date.now()),
+        .bind(event.id, Date.now(), event.type, 'processed'),
     ];
     if (event.type === 'invoice.paid') {
       const invoice = await stripeRequest<{
@@ -143,8 +160,28 @@ export async function POST(request: Request) {
       );
     }
     await db.batch(writes);
+    if (event.type === 'invoice.payment_failed') {
+      await recordOpsEvent({
+        ownerId,
+        category: 'billing',
+        severity: 'error',
+        status: 'open',
+        message: 'การชำระเงินไม่สำเร็จและต้องติดตาม',
+        metadata: { eventType: event.type },
+      }).catch(() => undefined);
+    }
     return Response.json({ received: true });
-  } catch {
+  } catch (error) {
+    await recordOpsEvent({
+      category: 'billing',
+      severity: 'error',
+      status: 'failed',
+      message: 'ประมวลผล Stripe webhook ไม่สำเร็จ',
+      metadata: {
+        reason:
+          error instanceof Error ? error.message.slice(0, 120) : 'unknown',
+      },
+    }).catch(() => undefined);
     return Response.json(
       { error: 'Webhook processing failed; retry required' },
       { status: 500 },

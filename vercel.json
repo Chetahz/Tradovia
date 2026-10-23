@@ -3,9 +3,20 @@
   "buildCommand": "node node_modules/vite/bin/vite.js build --config preview/vite.config.ts",
   "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
   "outputDirectory": "dist-preview",
+  "redirects": [
+    { "source": "/demo", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/demo", "permanent": false },
+    { "source": "/demo/:path*", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/demo/:path*", "permanent": false },
+    { "source": "/auth/:path*", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/auth/:path*", "permanent": false },
+    { "source": "/privacy", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/privacy", "permanent": false },
+    { "source": "/terms", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/terms", "permanent": false },
+    { "source": "/admin", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/admin", "permanent": false },
+    { "source": "/admin/:path*", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/admin/:path*", "permanent": false },
+    { "source": "/workspace/:path*", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/workspace/:path*", "permanent": false },
+    { "source": "/signout-with-chatgpt", "destination": "https://tradovia-app.rachatakaewthong.workers.dev/auth", "permanent": false }
+  ],
   "rewrites": [
     {
-      "source": "/((?!assets/|_next/|brand/|manifest.webmanifest|favicon.svg).*)",
+      "source": "/((?!assets/|fonts/|_next/|brand/|manifest.webmanifest|favicon.svg).*)",
       "destination": "/index.html"
     }
   ]

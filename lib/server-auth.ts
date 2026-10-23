@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getChatGPTUser } from '@/app/chatgpt-auth';
+import { currentSession } from '@/lib/auth-session';
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -25,9 +25,9 @@ export async function owner(request: Request) {
     }
     return { id: `demo:${id}`, mode: 'demo' as const };
   }
-  const user = await getChatGPTUser();
+  const user = await currentSession();
   if (!user) throw new ApiError(401, 'Sign in to access your workspace');
-  return { id: `user:${user.userId}`, mode: 'real' as const };
+  return { id: `auth0:${user.subject}`, mode: 'real' as const, role: user.role };
 }
 export function checkOrigin(request: Request) {
   if (request.method !== 'GET') {

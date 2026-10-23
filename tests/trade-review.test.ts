@@ -20,7 +20,7 @@ const plan: Playbook = {
   version: 1,
 };
 
-test('review survives persistence without changing imported execution, notes or images', () => {
+void test('review survives persistence without changing imported execution, notes or images', () => {
   const base = {
     ...demoData().trades[0],
     status: 'CLOSED' as const,
@@ -67,7 +67,7 @@ test('review survives persistence without changing imported execution, notes or 
   plan.version = 1;
 });
 
-test('unreviewed, legacy, explicit no-plan and open trades have distinct review states', () => {
+void test('unreviewed, legacy, explicit no-plan and open trades have distinct review states', () => {
   const trade = { ...demoData().trades[0], status: 'CLOSED' as const };
   assert.equal(isTradeReviewed(trade), false);
   assert.equal(
@@ -95,7 +95,7 @@ test('unreviewed, legacy, explicit no-plan and open trades have distinct review 
   );
 });
 
-test('checklist answers must belong to the saved plan and removed image labels are discarded', () => {
+void test('checklist answers must belong to the saved plan and removed image labels are discarded', () => {
   const trade = demoData().trades[0];
   assert.equal(planChecklist(plan).length, 2);
   assert.throws(

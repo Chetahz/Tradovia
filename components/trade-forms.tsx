@@ -1,6 +1,18 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowDownRight,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  CheckCircle2,
+  Clock3,
+  BookOpen,
+  ChevronDown,
+  Plus,
+  ShieldCheck,
+  Upload,
+} from 'lucide-react';
 import { ReviewEvidence, ReviewFields, emptyReview } from './review-fields';
 import { Field, Pick, type Translate } from '@/components/workspace-ui';
 import {
@@ -12,6 +24,7 @@ import {
   type Account,
   type WorkspaceData,
 } from '@/lib/domain';
+import { relevantReviewedLesson } from '@/lib/daily-companion';
 
 const tradeError = (message: string, t: Translate) => {
   const translations: Record<string, string> = {
@@ -44,6 +57,7 @@ function DecimalField({
   required,
   allowNegative = false,
   blankZero = false,
+  presets = [],
   className = '',
 }: {
   label: string;
@@ -52,6 +66,7 @@ function DecimalField({
   required?: boolean;
   allowNegative?: boolean;
   blankZero?: boolean;
+  presets?: number[];
   className?: string;
 }) {
   const [draft, setDraft] = useState(
@@ -93,6 +108,23 @@ function DecimalField({
           if (Number.isFinite(parsed)) setDraft(String(parsed));
         }}
       />
+      {presets.length > 0 && (
+        <div className="number-presets" aria-label={`${label} presets`}>
+          {presets.map((preset) => (
+            <button
+              type="button"
+              key={preset}
+              aria-pressed={value === preset}
+              onClick={() => {
+                setDraft(String(preset));
+                onValueChange(preset);
+              }}
+            >
+              {preset.toFixed(2)}
+            </button>
+          ))}
+        </div>
+      )}
     </label>
   );
 }
@@ -192,6 +224,7 @@ function SymbolPicker({
 export function TradeForm({
   trade,
   accounts,
+  trades = [],
   playbooks = [],
   mode,
   t,
@@ -199,9 +232,12 @@ export function TradeForm({
   onSave,
   onImport,
   serverError,
+  initialStep = 0,
+  onDraftChange,
 }: {
   trade: Trade;
   accounts: Account[];
+  trades?: Trade[];
   playbooks?: Playbook[];
   mode: string;
   t: Translate;
@@ -209,20 +245,113 @@ export function TradeForm({
   serverError?: string;
   onSave: (t: Trade) => Promise<void>;
   onImport?: () => void;
+  initialStep?: number;
+  onDraftChange?: (trade: Trade, step: number) => void;
 }) {
   const [v, setV] = useState(trade),
     [error, setError] = useState(''),
     [uploading, setUploading] = useState(false),
-    [expanded, setExpanded] = useState(false);
+    [expanded, setExpanded] = useState(false),
+    [lessonExpanded, setLessonExpanded] = useState(false),
+    [mobileStep, setMobileStep] = useState(initialStep);
+  const latestDraft = useRef({ v, mobileStep });
+  const formRef = useRef<HTMLFormElement>(null);
+  useLayoutEffect(() => {
+    latestDraft.current = { v, mobileStep };
+  }, [v, mobileStep]);
+  useEffect(() => {
+    if (v !== trade || mobileStep !== initialStep)
+      onDraftChange?.(v, mobileStep);
+  }, [v, mobileStep, trade, initialStep, onDraftChange]);
+  useEffect(() => {
+    if (!onDraftChange) return;
+    const flushDraft = () => {
+      const latest = latestDraft.current;
+      if (latest.v !== trade || latest.mobileStep !== initialStep)
+        onDraftChange(latest.v, latest.mobileStep);
+    };
+    window.addEventListener('pagehide', flushDraft);
+    return () => window.removeEventListener('pagehide', flushDraft);
+  }, [trade, initialStep, onDraftChange]);
+  useEffect(() => {
+    const form = formRef.current;
+    const dialog = form?.closest<HTMLElement>('.trade-dialog');
+    if (!form || !dialog) return;
+
+    let frame = 0;
+    const keepFocusedFieldVisible = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!window.matchMedia('(max-width: 767px)').matches) return;
+        const viewport = window.visualViewport;
+        const keyboardOpen = !!viewport && viewport.height < window.innerHeight - 100;
+        if (keyboardOpen) {
+          dialog.style.setProperty('--trade-visible-height', `${viewport.height}px`);
+          dialog.style.setProperty('--trade-visible-top', `${viewport.offsetTop}px`);
+        } else {
+          dialog.style.removeProperty('--trade-visible-height');
+          dialog.style.removeProperty('--trade-visible-top');
+        }
+
+        const focused = document.activeElement;
+        if (!(focused instanceof HTMLElement) || !form.contains(focused)) return;
+        if (!focused.matches('input, textarea, select')) return;
+        const actions = form.querySelector<HTMLElement>('.mobile-capture-actions');
+        const visibleBottom = Math.min(
+          actions?.getBoundingClientRect().top ?? dialog.getBoundingClientRect().bottom,
+          viewport ? viewport.offsetTop + viewport.height : window.innerHeight,
+        );
+        const overlap = focused.getBoundingClientRect().bottom + 16 - visibleBottom;
+        if (overlap > 0) (form.querySelector('.trade-form-scroll') ?? dialog).scrollBy({ top: overlap, behavior: 'smooth' });
+      });
+    };
+
+    form.addEventListener('focusin', keepFocusedFieldVisible);
+    window.visualViewport?.addEventListener('resize', keepFocusedFieldVisible);
+    window.visualViewport?.addEventListener('scroll', keepFocusedFieldVisible);
+    return () => {
+      cancelAnimationFrame(frame);
+      form.removeEventListener('focusin', keepFocusedFieldVisible);
+      window.visualViewport?.removeEventListener('resize', keepFocusedFieldVisible);
+      window.visualViewport?.removeEventListener('scroll', keepFocusedFieldVisible);
+      dialog.style.removeProperty('--trade-visible-height');
+      dialog.style.removeProperty('--trade-visible-top');
+    };
+  }, []);
   const set = (k: keyof Trade, value: unknown) => setV({ ...v, [k]: value });
   const plannedR = useMemo(() => {
     const loss = v.side === 'LONG' ? v.entry - v.sl : v.sl - v.entry;
     const reward = v.side === 'LONG' ? v.tp - v.entry : v.entry - v.tp;
     return loss > 0 && reward > 0 ? reward / loss : 0;
   }, [v.entry, v.side, v.sl, v.tp]);
+  const relatedLesson = useMemo(
+    () => trades.some((existing) => existing.id === trade.id)
+      ? undefined
+      : relevantReviewedLesson(trades, v),
+    [trades, trade.id, v],
+  );
+  const decisionResult = useMemo(() => {
+    if (!v.adherence || v.adherence === 'partial' || v.status !== 'CLOSED') {
+      return null;
+    }
+    const result = net(v);
+    if (v.gross === 0 && v.fees === 0) return null;
+    const profitable = result > 0;
+    if (v.adherence === 'yes') {
+      return profitable
+        ? t('Good Win', 'ชนะและทำตามแผน')
+        : t('Good Loss', 'แพ้แต่ตัดสินใจถูก');
+    }
+    return profitable
+      ? t('Bad Win', 'ชนะแต่ตัดสินใจผิด')
+      : t('Bad Loss', 'แพ้และหลุดแผน');
+  }, [t, v]);
   return (
     <form
+      ref={formRef}
       className="trade-form"
+      data-mobile-step={mobileStep}
+      noValidate
       onSubmit={async (e) => {
         e.preventDefault();
         setError('');
@@ -230,13 +359,24 @@ export function TradeForm({
           validateTrade(v);
           await onSave(v);
         } catch (e) {
-          setExpanded(true);
-          setError(
-            tradeError(e instanceof Error ? e.message : 'Invalid trade', t),
-          );
+          const message = e instanceof Error ? e.message : 'Invalid trade';
+          if (
+            message === 'Invalid symbol' ||
+            message === 'Invalid date or time'
+          ) {
+            setMobileStep(0);
+          } else if (
+            message === 'Entry and size must be positive' ||
+            message === 'Stop loss must be on the loss side of entry' ||
+            message === 'Target must be on the profit side of entry'
+          ) {
+            setMobileStep(1);
+          }
+          setError(tradeError(message, t));
         }
       }}
     >
+      <div className="trade-form-scroll">
       <div
         className="trade-entry-mode"
         role="tablist"
@@ -260,9 +400,29 @@ export function TradeForm({
           'เริ่มจากข้อมูลเข้าเทรดและผลลัพธ์ แล้วเพิ่มแผน บันทึกทบทวน และภาพกราฟด้านล่าง',
         )}
       </p>
+      <div
+        className="mobile-capture-progress"
+        aria-label={t('Recording progress', 'ขั้นตอนการบันทึก')}
+      >
+        {[
+          t('Trade', 'รายการ'),
+          t('Numbers', 'ตัวเลข'),
+          t('Decision', 'เหตุผล'),
+        ].map((label, index) => (
+          <button
+            type="button"
+            key={label}
+            aria-current={mobileStep === index ? 'step' : undefined}
+            onClick={() => setMobileStep(index)}
+          >
+            <span>{index + 1}</span>
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="form-grid">
-        <label className="form-field full">
-          <span>Playbook</span>
+        <label className="form-field full desktop-playbook-field" data-mobile-section="context">
+          <span>{t('Playbook', 'แผนการเทรด')}</span>
           <select
             value={v.playbook?.id || ''}
             onChange={(e) => {
@@ -270,6 +430,7 @@ export function TradeForm({
               const changed: Trade = {
                 ...v,
                 playbook: p ? { ...p } : undefined,
+                setup: p ? p.technique || p.name : v.setup,
                 adherence: '',
               };
               setV({
@@ -299,7 +460,7 @@ export function TradeForm({
           </select>
         </label>
         {v.playbook && (
-          <div className="form-field full">
+          <div className="form-field full" data-mobile-section="context">
             <details>
               <summary>
                 {t('View selected plan', 'ดูแผนที่เลือก')} · v{v.playbook.version}
@@ -315,21 +476,9 @@ export function TradeForm({
                   .join('\n\n')}
               </p>
             </details>
-            <label>
-              {t('Did you follow this plan?', 'ทำตามแผนนี้หรือไม่?')}
-              <select
-                value={v.adherence || ''}
-                onChange={(e) => set('adherence', e.target.value)}
-              >
-                <option value="">{t('Not reviewed', 'ยังไม่ทบทวน')}</option>
-                <option value="yes">{t('Followed', 'ตามแผน')}</option>
-                <option value="partial">{t('Partly', 'บางส่วน')}</option>
-                <option value="no">{t('Outside plan', 'นอกแผน')}</option>
-              </select>
-            </label>
           </div>
         )}
-        <label className="form-field full">
+        <label className="form-field full" data-mobile-section="basics">
           <span>{t('Trading account', 'บัญชีเทรด')}</span>
           <Pick
             label="Trading account"
@@ -338,45 +487,61 @@ export function TradeForm({
             options={accounts.map((a) => ({ value: a.id, label: a.name }))}
           />
         </label>
-        <SymbolPicker
-          value={v.symbol}
-          onChange={(symbol) => set('symbol', symbol)}
-          t={t}
-        />
-        <fieldset className="trade-segment-field">
+        <div className="full" data-mobile-section="basics">
+          <SymbolPicker
+            value={v.symbol}
+            onChange={(symbol) => set('symbol', symbol)}
+            t={t}
+          />
+        </div>
+        <fieldset
+          className="trade-segment-field mobile-full-field direction-field"
+          data-mobile-section="basics"
+        >
           <legend>{t('Direction', 'ทิศทาง')}</legend>
           <div className="trade-segments">
             <button
               type="button"
+              className="long-choice"
               aria-pressed={v.side === 'LONG'}
               onClick={() => set('side', 'LONG')}
             >
+              <ArrowUpRight size={16} />
               Long / Buy
             </button>
             <button
               type="button"
+              className="short-choice"
               aria-pressed={v.side === 'SHORT'}
               onClick={() => set('side', 'SHORT')}
             >
+              <ArrowDownRight size={16} />
               Short / Sell
             </button>
           </div>
         </fieldset>
-        <fieldset className="trade-segment-field">
+        <fieldset
+          className="trade-segment-field mobile-full-field status-field"
+          data-mobile-section="basics"
+        >
           <legend>{t('Status', 'สถานะ')}</legend>
           <div className="trade-segments">
             <button
               type="button"
+              className="open-choice"
               aria-pressed={v.status === 'OPEN'}
               onClick={() => set('status', 'OPEN')}
             >
+              <Clock3 size={15} />
               {t('Open', 'ยังไม่ปิด')}
             </button>
             <button
               type="button"
+              className="closed-choice"
               aria-pressed={v.status === 'CLOSED'}
               onClick={() => set('status', 'CLOSED')}
             >
+              <CheckCircle2 size={15} />
               {t('Closed', 'ปิดแล้ว')}
             </button>
           </div>
@@ -392,56 +557,110 @@ export function TradeForm({
                 )}
           </small>
         </fieldset>
-        <Field
-          label={t('Date', 'วันที่')}
-          required
-          type="date"
-          value={v.date}
-          onChange={(e) => set('date', e.target.value)}
-        />
-        <Field
-          label={t('Time', 'เวลา')}
-          required
-          type="time"
-          value={v.time}
-          onChange={(e) => set('time', e.target.value)}
-        />
-        <DecimalField
-          label={t('Entry price', 'ราคาเข้า')}
-          value={v.entry}
-          onValueChange={(value) => set('entry', value)}
-          required
-          blankZero
-        />
-        <DecimalField
-          label={t('Size / lot', 'ขนาด / Lot')}
-          value={v.lot}
-          onValueChange={(value) => set('lot', value)}
-          required
-          blankZero
-        />
-        <DecimalField
-          label={t('Stop loss', 'จุดตัดขาดทุน')}
-          value={v.sl}
-          onValueChange={(value) => set('sl', value)}
-          blankZero
-        />
-        <DecimalField
-          label={t('Take profit', 'จุดทำกำไร')}
-          value={v.tp}
-          onValueChange={(value) => set('tp', value)}
-          blankZero
-        />
-        <DecimalField
-          label={t('Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)')}
-          value={v.risk}
-          onValueChange={(value) => set('risk', value)}
-          required
-          blankZero
-        />
-        <div className="form-field calculated-field">
-          <span>{t('Planned reward / risk', 'Reward / Risk ตามแผน')}</span>
-          <output>{plannedR > 0 ? `1 : ${plannedR.toFixed(2)}` : '—'}</output>
+        <div className="mobile-date-field" data-mobile-section="basics">
+          <Field
+            label={t('Date', 'วันที่')}
+            required
+            type="date"
+            value={v.date}
+            onChange={(e) => set('date', e.target.value)}
+          />
+        </div>
+        <div className="mobile-time-field" data-mobile-section="basics">
+          <Field
+            label={t('Time', 'เวลา')}
+            required
+            type="time"
+            value={v.time}
+            onChange={(e) => set('time', e.target.value)}
+          />
+        </div>
+        {relatedLesson && (
+          <aside
+            className="trade-memory full"
+            data-mobile-section="basics"
+            data-expanded={lessonExpanded}
+          >
+            <div className="trade-memory-label">
+              <BookOpen size={17} aria-hidden="true" />
+              <strong>{t('Remember this before your next trade', 'ก่อนเข้าไม้ใหม่ ลองนึกถึงข้อนี้')}</strong>
+              <button
+                className="trade-memory-toggle"
+                type="button"
+                aria-label={lessonExpanded ? t('Show less', 'ย่อบทเรียน') : t('Read full lesson', 'อ่านบทเรียนทั้งหมด')}
+                aria-expanded={lessonExpanded}
+                onClick={() => setLessonExpanded((open) => !open)}
+              >
+                <ChevronDown size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <p>{relatedLesson.trade.review!.lesson}</p>
+            <small>
+              {relatedLesson.reason === 'playbook'
+                ? t('From this playbook', 'จากแผนการเทรดเดียวกัน')
+                : relatedLesson.reason === 'setup'
+                  ? t('From this setup', 'จากรูปแบบการเทรดเดียวกัน')
+                  : t('From this symbol', 'จากสินทรัพย์เดียวกัน')}
+              {' · '}{relatedLesson.trade.symbol} · {relatedLesson.trade.date}
+            </small>
+          </aside>
+        )}
+        <div className="desktop-risk-heading full" aria-hidden="true">
+          <span>{t('Risk plan', 'แผนความเสี่ยง')}</span>
+          <small>{t('Use the numbers you planned before entering.', 'ใช้ตัวเลขที่วางไว้ก่อนเข้าเทรด')}</small>
+        </div>
+        <div data-mobile-section="numbers">
+          <DecimalField
+            label={t('Entry price', 'ราคาเข้า')}
+            value={v.entry}
+            onValueChange={(value) => set('entry', value)}
+            required
+            blankZero
+          />
+        </div>
+        <div data-mobile-section="numbers">
+          <DecimalField
+            label={t('Size / lot', 'ขนาด / Lot')}
+            value={v.lot}
+            onValueChange={(value) => set('lot', value)}
+            required
+            blankZero
+            presets={[0.01, 0.05, 0.1]}
+          />
+        </div>
+        <div data-mobile-section="numbers">
+          <DecimalField
+            label={t('Stop loss', 'จุดตัดขาดทุน')}
+            value={v.sl}
+            onValueChange={(value) => set('sl', value)}
+            blankZero
+          />
+        </div>
+        <div data-mobile-section="numbers">
+          <DecimalField
+            label={t('Take profit', 'จุดทำกำไร')}
+            value={v.tp}
+            onValueChange={(value) => set('tp', value)}
+            blankZero
+          />
+        </div>
+        <div data-mobile-section="numbers">
+          <DecimalField
+            label={t('Planned risk (USD)', 'ความเสี่ยงตามแผน (USD)')}
+            value={v.risk}
+            onValueChange={(value) => set('risk', value)}
+            required
+            blankZero
+          />
+        </div>
+        <div
+          className="form-field calculated-field"
+          data-mobile-section="numbers"
+        >
+          <span>{t('Planned reward / risk', 'อัตราผลตอบแทนต่อความเสี่ยง')}</span>
+          <output aria-live="polite">
+            {plannedR > 0 ? `1 : ${plannedR.toFixed(2)}` : '—'}
+          </output>
         </div>
         {v.status === 'CLOSED' &&
           (
@@ -452,6 +671,7 @@ export function TradeForm({
           ).map(([k, en, th]) => (
             <DecimalField
               key={k}
+              className="mobile-number-field"
               label={t(en, th)}
               required
               value={v[k]}
@@ -459,7 +679,51 @@ export function TradeForm({
               onValueChange={(value) => set(k, value)}
             />
           ))}
-        <label className="form-field full">
+        <fieldset className="decision-check full" data-mobile-section="context">
+          <legend>
+            <ShieldCheck size={16} />
+            {t('Decision check', 'ตรวจคุณภาพการตัดสินใจ')}
+          </legend>
+          <p>
+            {t(
+              'Did you follow the plan you intended before entering?',
+              'ตอนเข้าเทรด คุณทำตามแผนที่ตั้งใจไว้หรือไม่?',
+            )}
+          </p>
+          <div className="decision-options">
+            {[
+              ['yes', t('Followed', 'ตามแผน')],
+              ['partial', t('Partly', 'บางส่วน')],
+              ['no', t('Outside plan', 'นอกแผน')],
+            ].map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={v.adherence === value}
+                onClick={() => set('adherence', value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {decisionResult && (
+            <output className={`decision-result ${v.adherence}`}>
+              <b>{decisionResult}</b>
+              <span>
+                {v.adherence === 'yes'
+                  ? t(
+                      'Judge the process separately from the outcome.',
+                      'แยกคุณภาพของกระบวนการออกจากผลลัพธ์',
+                    )
+                  : t(
+                      'A profitable trade can still reinforce the wrong behavior.',
+                      'แม้ได้กำไร การหลุดแผนก็สร้างนิสัยที่อันตรายได้',
+                    )}
+              </span>
+            </output>
+          )}
+        </fieldset>
+        <label className="form-field full" data-mobile-section="context">
           <span>{t('Technique / setup', 'เทคนิค / Setup')}</span>
           <input
             list="trade-technique-options"
@@ -485,7 +749,10 @@ export function TradeForm({
             ))}
           </datalist>
         </label>
-        <label className="form-field full trade-note-field">
+        <label
+          className="form-field full trade-note-field"
+          data-mobile-section="context"
+        >
           <span>{t('Quick note (optional)', 'บันทึกเพิ่มเติม (ไม่บังคับ)')}</span>
           <textarea
             value={v.notes}
@@ -499,8 +766,71 @@ export function TradeForm({
           />
         </label>
       </div>
+      <aside className="desktop-trade-insights" aria-label={t('Live trade summary', 'สรุปรายการแบบสด')}>
+        <section className="desktop-live-summary">
+          <span className="overline">{t('Live summary', 'สรุปแบบสด')}</span>
+          <div className="desktop-summary-title">
+            <div>
+              <b>{v.symbol || '—'}</b>
+              <small>{v.side === 'LONG' ? 'Long / Buy' : 'Short / Sell'}</small>
+            </div>
+            <span className={`desktop-status-pill ${v.status.toLowerCase()}`}>
+              {v.status === 'CLOSED' ? t('Closed', 'ปิดแล้ว') : t('Open', 'ยังไม่ปิด')}
+            </span>
+          </div>
+          <dl>
+            <div>
+              <dt>{t('Planned risk', 'ความเสี่ยงตามแผน')}</dt>
+              <dd>{v.risk > 0 ? money(v.risk) : '—'}</dd>
+            </div>
+            <div>
+              <dt>{t('Planned R:R', 'ผลตอบแทนต่อความเสี่ยง')}</dt>
+              <dd>{plannedR > 0 ? `1 : ${plannedR.toFixed(2)}` : '—'}</dd>
+            </div>
+            <div>
+              <dt>{t('Net P&L', 'กำไรสุทธิ')}</dt>
+              <dd className={v.status === 'CLOSED' && net(v) < 0 ? 'negative' : 'positive'}>
+                {v.status === 'CLOSED' ? money(net(v)) : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt>{t('Realized R', 'R ที่เกิดขึ้นจริง')}</dt>
+              <dd>{v.status === 'CLOSED' && v.risk > 0 ? `${(net(v) / v.risk).toFixed(2)}R` : '—'}</dd>
+            </div>
+          </dl>
+        </section>
+        {relatedLesson && (
+          <section className="desktop-insight-card desktop-lesson-card">
+            <div className="desktop-insight-heading">
+              <BookOpen size={17} aria-hidden="true" />
+              <b>{t('Before your next trade', 'ก่อนเข้าไม้ใหม่')}</b>
+            </div>
+            <p>{relatedLesson.trade.review!.lesson}</p>
+            <small>
+              {relatedLesson.reason === 'playbook'
+                ? t('From this playbook', 'จากแผนการเทรดเดียวกัน')
+                : relatedLesson.reason === 'setup'
+                  ? t('From this setup', 'จากรูปแบบการเทรดเดียวกัน')
+                  : t('From this symbol', 'จากสินทรัพย์เดียวกัน')}
+              {' · '}{relatedLesson.trade.symbol} · {relatedLesson.trade.date}
+            </small>
+          </section>
+        )}
+        <section className="desktop-insight-card desktop-process-card">
+          <div className="desktop-insight-heading">
+            <ShieldCheck size={17} aria-hidden="true" />
+            <b>{t('Process first', 'ให้ความสำคัญกับกระบวนการ')}</b>
+          </div>
+          <p>
+            {v.playbook
+              ? t('Your playbook is attached. Check the setup and risk before saving.', 'เลือกแผนแล้ว ตรวจรูปแบบและความเสี่ยงอีกครั้งก่อนบันทึก')
+              : t('Choose a playbook when this trade follows a repeatable setup.', 'เลือกแผนการเทรดเมื่อรายการนี้มาจากรูปแบบที่ทำซ้ำได้')}
+          </p>
+        </section>
+      </aside>
       <details
         className="journal-extra"
+        data-mobile-section="context"
         open={expanded}
         onToggle={(e) => setExpanded(e.currentTarget.open)}
       >
@@ -529,7 +859,7 @@ export function TradeForm({
           onUploading={setUploading}
         />
       </details>
-      <details className="review-evidence">
+      <details className="review-evidence" data-mobile-section="context">
         <summary>
           {t(
             'Checklist & short reflection (optional)',
@@ -544,11 +874,44 @@ export function TradeForm({
         />
       </details>
       {(error || serverError) && (
-        <p role="alert" className="negative">
+        <p role="alert" className="negative mobile-capture-error">
           {error || serverError}
         </p>
       )}
-      <div className="trade-form-footer">
+      </div>
+      <div className="mobile-capture-actions">
+        {mobileStep > 0 && (
+          <button
+            className="button ghost"
+            type="button"
+            onClick={() => setMobileStep((step) => Math.max(0, step - 1))}
+          >
+            <ArrowLeft size={17} /> {t('Back', 'ย้อนกลับ')}
+          </button>
+        )}
+        {mobileStep < 2 ? (
+          <button
+            className="button ink"
+            type="button"
+            onClick={() => setMobileStep((step) => Math.min(2, step + 1))}
+          >
+            {mobileStep === 0
+              ? t('Add numbers', 'ใส่ตัวเลข')
+              : t('Add decision context', 'เพิ่มเหตุผล')}
+            <ArrowRight size={17} />
+          </button>
+        ) : (
+          <button className="button ink" disabled={busy || uploading}>
+            {busy ? t('Saving…', 'กำลังบันทึก…') : t('Save trade', 'บันทึกการเทรด')}
+          </button>
+        )}
+        {mobileStep === 1 && (
+          <button className="mobile-quick-save" disabled={busy || uploading}>
+            {t('Save now · add context later', 'บันทึกก่อน · ทบทวนทีหลัง')}
+          </button>
+        )}
+      </div>
+      <div className="trade-form-footer desktop-trade-footer">
         <span>
           {t('Net P&L', 'กำไรสุทธิ')}:{' '}
           <b className={net(v) >= 0 ? 'positive' : 'negative'}>
@@ -618,7 +981,8 @@ export function SimpleForm({
     >
       {kind !== 'connection' && (
         <Field
-          label={kind === 'rule' ? t('Rule', 'กฎ') : t('Name', 'ชื่อ')}
+          label={kind === 'rule' ? t('Rule', 'กฎ') : kind === 'profile'
+            ? t('Name Tradovia calls you', 'ชื่อที่ให้ Tradovia เรียก') : t('Name', 'ชื่อ')}
           required
           value={name}
           maxLength={kind === 'rule' ? 300 : 80}

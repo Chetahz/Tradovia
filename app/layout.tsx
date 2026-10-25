@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './widget-studio.css';
+import './admin-polish.css';
 import '../preview/fonts.css';
 
 export const metadata: Metadata = {
@@ -18,11 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="antialiased"
-      >
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

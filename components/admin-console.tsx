@@ -206,8 +206,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
       <section className="admin-panel admin-support-inbox">
         <div className="admin-panel-heading admin-heading-stack-mobile">
           <div>
-            <span className="admin-eyebrow">SUPPORT INBOX</span>
-            <h2>ข้อความจากลูกค้า</h2>
+            <span className="admin-eyebrow">กล่องช่วยเหลือ</span>
+            <h2>เรื่องที่ลูกค้าต้องการความช่วยเหลือ</h2>
           </div>
           <span>{data.metrics.openTickets} รายการรอจัดการ</span>
         </div>
@@ -273,8 +273,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
       <section className="admin-panel">
         <div className="admin-panel-heading admin-heading-stack-mobile">
           <div>
-            <span className="admin-eyebrow">CUSTOMERS</span>
-            <h2>ลูกค้าและการใช้งาน</h2>
+            <span className="admin-eyebrow">ลูกค้า</span>
+            <h2>บัญชีและการใช้งาน</h2>
           </div>
           <span>
             {customers.length} จาก {data.users.length} บัญชี
@@ -369,8 +369,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
         <article className="admin-panel">
           <div className="admin-panel-heading admin-heading-stack-mobile">
             <div>
-              <span className="admin-eyebrow">ISSUE CENTER</span>
-              <h2>เหตุการณ์ที่ต้องดูแล</h2>
+              <span className="admin-eyebrow">เหตุการณ์ระบบ</span>
+              <h2>สิ่งที่ต้องตรวจสอบ</h2>
             </div>
             <span>{issues.length} รายการ</span>
           </div>
@@ -439,8 +439,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
           <article className="admin-panel admin-billing-panel">
             <div className="admin-panel-heading">
               <div>
-                <span className="admin-eyebrow">BILLING READINESS</span>
-                <h2>การชำระเงิน</h2>
+                <span className="admin-eyebrow">รายรับและสมาชิก</span>
+                <h2>ภาพรวมการชำระเงิน</h2>
               </div>
               <CircleDollarSign size={20} />
             </div>
@@ -476,8 +476,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
           <article className="admin-panel">
             <div className="admin-panel-heading">
               <div>
-                <span className="admin-eyebrow">AUDIT LOG</span>
-                <h2>การทำงานของผู้ดูแล</h2>
+                <span className="admin-eyebrow">ประวัติการดูแล</span>
+                <h2>กิจกรรมล่าสุด</h2>
               </div>
               <ShieldCheck size={20} />
             </div>
@@ -517,7 +517,7 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
           {selected && (
             <>
               <DialogHeader>
-                <span className="admin-eyebrow">CUSTOMER OPERATIONS</span>
+                <span className="admin-eyebrow">ข้อมูลลูกค้า</span>
                 <DialogTitle>{selected.displayName || 'Trader'}</DialogTitle>
                 <DialogDescription>
                   {selected.email || compactId(selected.id)}
@@ -691,7 +691,7 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
           {selectedTicket && (
             <>
               <DialogHeader>
-                <span className="admin-eyebrow">SUPPORT CONVERSATION</span>
+                <span className="admin-eyebrow">บทสนทนากับลูกค้า</span>
                 <DialogTitle>{selectedTicket.subject}</DialogTitle>
                 <DialogDescription>
                   {selectedTicket.category.toUpperCase()} ·{' '}

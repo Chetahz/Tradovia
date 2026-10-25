@@ -82,12 +82,12 @@ await test('Owner requires exact server configured subject; expired subscription
   };
   assert.equal(effectiveSubscription(sub, false).plan, 'pro');
   assert.equal(
-    effectiveSubscription({ ...sub, status: 'canceled' }, false).plan,
-    'manual',
+    effectiveSubscription({ ...sub, status: 'canceled' }, false).status,
+    'canceled',
   );
   assert.equal(
-    effectiveSubscription({ ...sub, renewal: '2020-01-01' }, false).plan,
-    'manual',
+    effectiveSubscription({ ...sub, renewal: '2020-01-01' }, false).status,
+    'expired',
   );
   assert.equal(effectiveSubscription(sub, true).status, 'owner');
 });

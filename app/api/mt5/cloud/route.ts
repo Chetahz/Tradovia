@@ -5,6 +5,7 @@ import { createMetaApiDraft, deleteMetaApiAccount, MetaApiError, metaApiConfigur
 import { readBoundedBody } from '@/lib/request-body';
 import { initialize, readWorkspace } from '@/lib/repository';
 import { owner, checkOrigin, apiFailure, ApiError } from '@/lib/server-auth';
+import { hasEliteAccess } from '@/lib/plan-access';
 
 function token() { return (env as unknown as { METAAPI_TOKEN?: string }).METAAPI_TOKEN?.trim() || ''; }
 function enabled() { return Boolean(token()) && (env as unknown as { MT5_CLOUD_ENABLED?: string }).MT5_CLOUD_ENABLED === 'true'; }
@@ -15,7 +16,7 @@ async function context(request: Request) {
   if (who.mode !== 'real') throw new ApiError(403, 'Sign in to connect MT5');
   await initialize(who.id, who.mode);
   const data = await readWorkspace(who.id);
-  if (!['pro', 'elite'].includes(data.subscription.plan)) throw new ApiError(403, 'MT5 sync requires Pro or Elite');
+  if (!hasEliteAccess(data.subscription)) throw new ApiError(403, 'MT5 sync requires the future Elite plan');
   return { who, data, db: database() };
 }
 

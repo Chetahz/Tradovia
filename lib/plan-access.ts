@@ -18,8 +18,17 @@ export const PRO_LIMITS = {
 } as const;
 
 export function hasProAccess(subscription: WorkspaceData['subscription']) {
-  return ['pro', 'elite'].includes(subscription.plan) &&
-    ['active', 'trialing', 'owner'].includes(subscription.status);
+  return (
+    ['pro', 'elite'].includes(subscription.plan) &&
+    ['active', 'trialing', 'owner'].includes(subscription.status)
+  );
+}
+
+export function hasEliteAccess(subscription: WorkspaceData['subscription']) {
+  return (
+    subscription.plan === 'elite' &&
+    ['active', 'trialing', 'owner'].includes(subscription.status)
+  );
 }
 
 export function planLimits(subscription: WorkspaceData['subscription']) {

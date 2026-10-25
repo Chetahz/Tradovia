@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { Connection, WorkspaceData } from '@/lib/domain';
 import type { Translate } from './workspace-ui';
+import { hasEliteAccess } from '@/lib/plan-access';
 
 export default function Mt5Connections({ data, mode, t }: { data: WorkspaceData; mode: string; t: Translate }) {
   const [connections, setConnections] = useState(data.connections.filter(c => c.provider === 'metaapi'));
@@ -11,7 +12,7 @@ export default function Mt5Connections({ data, mode, t }: { data: WorkspaceData;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pendingLink, setPendingLink] = useState('');
-  const eligible = mode === 'real' && ['pro', 'elite'].includes(data.subscription.plan);
+  const eligible = mode === 'real' && hasEliteAccess(data.subscription);
 
   useEffect(() => {
     if (!eligible) return;
@@ -46,7 +47,7 @@ export default function Mt5Connections({ data, mode, t }: { data: WorkspaceData;
       <p>{t('Connect your MT5 account once and let Tradovia import closed trades automatically. No Windows computer or Expert Advisor needs to stay running.', 'เชื่อมบัญชี MT5 ครั้งเดียว แล้วให้รายการที่ปิดแล้วเข้าบันทึกอัตโนมัติ โดยไม่ต้องเปิดคอม Windows หรือ Expert Advisor ค้างไว้')}</p>
     </div>
     <div className="notice">{t('Use your investor (read-only) password. Your login and password are entered on MetaApi’s secure page, not stored by Tradovia. Connection depends on broker server compatibility and may take time.', 'ใช้รหัส Investor (อ่านอย่างเดียว) เท่านั้น คุณจะกรอกเลขบัญชีและรหัสบนหน้าปลอดภัยของ MetaApi โดย Tradovia ไม่เก็บรหัส การเชื่อมขึ้นกับเซิร์ฟเวอร์โบรกเกอร์และอาจใช้เวลาสักครู่')}</div>
-    {!eligible && <div className="notice">{mode === 'demo' ? t('Sign in to connect a real MT5 account. Demo data cannot sync.', 'เข้าสู่ระบบก่อนเชื่อม MT5 จริง ข้อมูลเดโม่ไม่สามารถซิงก์ได้') : t('MT5 sync is planned for Pro and Elite.', 'ซิงก์ MT5 สำหรับแพ็กเกจ Pro และ Elite')}</div>}
+    {!eligible && <div className="notice">{mode === 'demo' ? t('Sign in to connect a real MT5 account. Demo data cannot sync.', 'เข้าสู่ระบบก่อนเชื่อม MT5 จริง ข้อมูลเดโม่ไม่สามารถซิงก์ได้') : t('Automatic MT5 sync is reserved for a future third plan. Pro can import MT5 reports now.', 'ซิงก์ MT5 อัตโนมัติจะอยู่ในแพ็กเกจระดับ 3 ในอนาคต ส่วน Pro นำเข้ารายงาน MT5 ได้แล้ว')}</div>}
     {eligible && !configured && <div className="panel"><h3>{t('Cloud connection is not open yet', 'ยังไม่เปิดการเชื่อมต่อ Cloud')}</h3><p>{t('We are preparing MetaApi access. Please continue using manual entries or MT5 report import for now.', 'กำลังเตรียมบัญชี MetaApi ระหว่างนี้ใช้บันทึกเองหรือนำเข้ารายงาน MT5 ได้')}</p></div>}
     {eligible && configured && <div className="panel">
       <h3>{t('Connect a trading account', 'เชื่อมบัญชีเทรด')}</h3>

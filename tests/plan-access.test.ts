@@ -4,9 +4,11 @@ import type { WorkspaceData } from '../lib/domain.ts';
 import {
   FREE_LIMITS,
   PRO_LIMITS,
+  hasEliteAccess,
   hasProAccess,
   planLimits,
 } from '../lib/plan-access.ts';
+import { effectiveSubscription } from '../lib/entitlements.ts';
 
 const subscription = (
   plan: WorkspaceData['subscription']['plan'],
@@ -46,4 +48,25 @@ await test('inactive paid subscriptions fall back to Free limits', () => {
     assert.equal(hasProAccess(inactive), false);
     assert.deepEqual(planLimits(inactive), FREE_LIMITS);
   }
+});
+
+await test('inactive billing state stays visible while paid features remain locked', () => {
+  const pastDue = subscription('pro', 'past_due');
+  assert.deepEqual(effectiveSubscription(pastDue, false), pastDue);
+  assert.equal(hasProAccess(effectiveSubscription(pastDue, false)), false);
+});
+
+await test('an elapsed renewal preserves the plan and becomes expired', () => {
+  const elapsed = {
+    ...subscription('pro', 'active'),
+    renewal: '2020-01-01T00:00:00.000Z',
+  };
+  assert.equal(effectiveSubscription(elapsed, false).plan, 'pro');
+  assert.equal(effectiveSubscription(elapsed, false).status, 'expired');
+});
+
+await test('MT5 cloud access belongs only to an active Elite plan', () => {
+  assert.equal(hasEliteAccess(subscription('pro', 'active')), false);
+  assert.equal(hasEliteAccess(subscription('elite', 'active')), true);
+  assert.equal(hasEliteAccess(subscription('elite', 'past_due')), false);
 });

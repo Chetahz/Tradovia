@@ -25,6 +25,24 @@ import {
   type ReviewReminder,
 } from '@/lib/review-reminder';
 import { FREE_LIMITS, hasProAccess } from '@/lib/plan-access';
+
+const subscriptionStatus = (
+  value: WorkspaceData['subscription'],
+  t: Translate,
+) => {
+  if (value.status === 'owner') return t('Owner access', 'สิทธิ์เจ้าของระบบ');
+  if (value.status === 'trialing') return t('Trial active', 'กำลังทดลองใช้');
+  if (value.status === 'active')
+    return value.cancelAtPeriodEnd
+      ? t('Cancels at period end', 'ยกเลิกเมื่อสิ้นสุดรอบ')
+      : t('Active', 'ใช้งานอยู่');
+  if (['past_due', 'unpaid', 'incomplete'].includes(value.status))
+    return t('Payment needs attention', 'ต้องตรวจสอบการชำระเงิน');
+  if (value.status === 'expired') return t('Expired', 'หมดอายุ');
+  if (value.status === 'canceled') return t('Cancelled', 'ยกเลิกแล้ว');
+  return t('Free', 'ฟรี');
+};
+
 export function AccountViews({
   page,
   data,
@@ -55,6 +73,7 @@ export function AccountViews({
   saveReviewReminder: (value: ReviewReminder) => Promise<boolean>;
 }) {
   const proAccess = mode === 'demo' || hasProAccess(data.subscription);
+  const ownerAccess = data.subscription.status === 'owner';
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [reminder, setReminder] = useState<ReviewReminder>(
@@ -62,6 +81,12 @@ export function AccountViews({
   );
   const [reminderBusy, setReminderBusy] = useState(false);
   const [reminderMessage, setReminderMessage] = useState('');
+  const renewalTime = Date.parse(data.subscription.renewal ?? '');
+  const renewal = Number.isFinite(renewalTime)
+    ? new Intl.DateTimeFormat(th ? 'th-TH' : 'en-US', {
+        dateStyle: 'medium',
+      }).format(renewalTime)
+    : null;
   const updateAvatar = async (file?: File) => {
     if (
       file &&
@@ -422,16 +447,28 @@ export function AccountViews({
           {data.subscription.plan === 'manual'
             ? 'FREE'
             : data.subscription.plan.toUpperCase()}{' '}
-          ·{' '}
-          {data.subscription.plan === 'manual'
-            ? t('Free', 'ฟรี')
-            : data.subscription.status}
+          · {subscriptionStatus(data.subscription, t)}
         </h2>
         <p className="muted-copy">
-          {t(
-            'Your Free workspace remains available without a paid subscription.',
-            'ใช้เวิร์กสเปซ Free ได้โดยไม่ต้องสมัครแพ็กเกจแบบชำระเงิน',
-          )}
+          {ownerAccess
+            ? t(
+                'Owner access includes every Pro capability without a subscription charge.',
+                'สิทธิ์เจ้าของระบบเปิดความสามารถ Pro ทั้งหมดโดยไม่ต้องชำระค่าสมาชิก',
+              )
+            : proAccess
+              ? t(
+                  'Your workspace has every Pro capability.',
+                  'เวิร์กสเปซของคุณเปิดความสามารถ Pro ครบแล้ว',
+                )
+              : data.subscription.plan !== 'manual'
+                ? t(
+                    'Pro is inactive. Free remains available and your existing data is preserved.',
+                    'สิทธิ์ Pro ยังไม่ทำงาน คุณยังใช้ Free ได้และข้อมูลเดิมอยู่ครบ',
+                  )
+                : t(
+                    'Your Free workspace remains available without a paid subscription.',
+                    'ใช้เวิร์กสเปซ Free ได้โดยไม่ต้องสมัครแพ็กเกจแบบชำระเงิน',
+                  )}
         </p>
         {!proAccess && (
           <div
@@ -474,26 +511,38 @@ export function AccountViews({
         )}
         <div className="rule-row">
           <span>{t('Renewal', 'ต่ออายุ')}</span>
-          <b>
-            {data.subscription.renewal ??
-              t('No renewal scheduled', 'ไม่มีรอบต่ออายุ')}
-          </b>
+          <b>{renewal ?? t('No renewal scheduled', 'ไม่มีรอบต่ออายุ')}</b>
         </div>
         <p className="muted-copy">
-          {t(
-            'Choose a plan below. After subscribing, manage invoices, plan changes and cancellation from the secure Stripe portal.',
-            'เลือกแพ็กเกจด้านล่าง หลังสมัครแล้วคุณจัดการใบเสร็จ เปลี่ยนแพ็กเกจ และยกเลิกได้ผ่านพอร์ทัล Stripe ที่ปลอดภัย',
-          )}
+          {ownerAccess
+            ? t(
+                'This account is excluded from customer billing.',
+                'บัญชีนี้แยกออกจากระบบเรียกเก็บเงินของลูกค้า',
+              )
+            : t(
+                'Choose a plan below. After subscribing, manage invoices, plan changes and cancellation from the secure Stripe portal.',
+                'เลือกแพ็กเกจด้านล่าง หลังสมัครแล้วคุณจัดการใบเสร็จ เปลี่ยนแพ็กเกจ และยกเลิกได้ผ่านพอร์ทัล Stripe ที่ปลอดภัย',
+              )}
         </p>
-        <Link
-          prefetch={false}
-          className="button ghost compact mt-4"
-          href="/#pricing"
-        >
-          {t('View launch plans', 'ดูแพ็กเกจเปิดตัว')}
-          <ArrowUpRight size={16} />
-        </Link>
-        <BillingControls mode={mode} subscription={data.subscription} t={t} />
+        {!ownerAccess && (
+          <>
+            <Link
+              prefetch={false}
+              className="button ghost compact mt-4"
+              href="/#pricing"
+            >
+              {t('View launch plans', 'ดูแพ็กเกจเปิดตัว')}
+              <ArrowUpRight size={16} />
+            </Link>
+            <BillingControls
+              mode={mode}
+              subscription={data.subscription}
+              t={t}
+              th={th}
+              reload={reload}
+            />
+          </>
+        )}
         <PlanComparison t={t} compact />
       </div>
       <div className="panel">

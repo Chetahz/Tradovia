@@ -5983,6 +5983,41 @@ html[lang='th'] .hero h1 {
 .billing-controls {
   margin-top: 20px;
 }
+.billing-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 15px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--muted);
+}
+.billing-state svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.billing-state b,
+.billing-state small {
+  display: block;
+  margin: 0;
+}
+.billing-state small {
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.billing-state-active {
+  border-color: color-mix(in srgb, var(--positive) 28%, var(--border));
+  background: color-mix(in srgb, var(--positive) 8%, var(--card));
+  color: var(--positive);
+}
+.billing-state-warning {
+  border-color: color-mix(in srgb, var(--negative) 25%, var(--border));
+  background: color-mix(in srgb, var(--negative) 7%, var(--card));
+  color: var(--negative);
+}
 .billing-controls .actions {
   flex-wrap: wrap;
   gap: 10px;
@@ -6035,6 +6070,19 @@ html[lang='th'] .hero h1 {
   margin-top: 12px;
   color: var(--muted-foreground);
   font-size: 13px;
+}
+.billing-result {
+  display: block;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.billing-error {
+  margin-top: 12px;
 }
 @media (max-width: 540px) {
   .billing-upgrade-grid {

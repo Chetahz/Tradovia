@@ -157,8 +157,53 @@ export async function POST(request: Request) {
             invoice.amount_paid,
             invoice.currency,
           ),
+        db
+          .prepare(
+            'INSERT INTO notifications(id,owner_id,type,title,body,link,created_at) VALUES(?,?,?,?,?,?,?)',
+          )
+          .bind(
+            crypto.randomUUID(),
+            ownerId,
+            'billing_paid',
+            'ชำระเงินเรียบร้อยแล้ว',
+            'สิทธิ์ Pro และใบเสร็จของคุณได้รับการอัปเดตแล้ว',
+            '#settings',
+            Date.now(),
+          ),
       );
     }
+    if (event.type === 'invoice.payment_failed')
+      writes.push(
+        db
+          .prepare(
+            'INSERT INTO notifications(id,owner_id,type,title,body,link,created_at) VALUES(?,?,?,?,?,?,?)',
+          )
+          .bind(
+            crypto.randomUUID(),
+            ownerId,
+            'billing_failed',
+            'การชำระเงินไม่สำเร็จ',
+            'ตรวจสอบวิธีชำระเงินเพื่อเปิดสิทธิ์ Pro ให้ต่อเนื่อง',
+            '#settings',
+            Date.now(),
+          ),
+      );
+    if (event.type === 'customer.subscription.deleted')
+      writes.push(
+        db
+          .prepare(
+            'INSERT INTO notifications(id,owner_id,type,title,body,link,created_at) VALUES(?,?,?,?,?,?,?)',
+          )
+          .bind(
+            crypto.randomUUID(),
+            ownerId,
+            'billing_cancelled',
+            'แพ็กเกจ Pro สิ้นสุดแล้ว',
+            'บัญชีเปลี่ยนกลับมาใช้สิทธิ์ Free และข้อมูลเดิมยังอยู่ครบ',
+            '#settings',
+            Date.now(),
+          ),
+      );
     await db.batch(writes);
     if (event.type === 'invoice.payment_failed') {
       await recordOpsEvent({

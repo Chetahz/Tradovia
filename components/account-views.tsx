@@ -6,6 +6,7 @@ import ProfileAvatar from './profile-avatar';
 import BillingControls from './billing-controls';
 import PlanComparison from './plan-comparison';
 import DeleteAccount from './delete-account';
+import SupportCenter from './support-center';
 import {
   Wallet,
   Plus,
@@ -107,13 +108,16 @@ export function AccountViews({
           <button
             className="button ghost compact"
             onClick={() => {
-              if (!proAccess && data.portfolios.length > 0) window.location.hash = 'settings';
+              if (!proAccess && data.portfolios.length > 0)
+                window.location.hash = 'settings';
               else setFormKind('portfolio');
             }}
           >
             <Plus size={16} />
             {t('New portfolio', 'สร้างพอร์ต')}{' '}
-            {!proAccess && data.portfolios.length > 0 && <span className="plan-badge">PRO</span>}
+            {!proAccess && data.portfolios.length > 0 && (
+              <span className="plan-badge">PRO</span>
+            )}
           </button>
         </div>
         <div className="two-col">
@@ -172,14 +176,17 @@ export function AccountViews({
         <button
           className="button ghost mt-5"
           onClick={() => {
-            if (!proAccess && data.accounts.length > 0) window.location.hash = 'settings';
+            if (!proAccess && data.accounts.length > 0)
+              window.location.hash = 'settings';
             else setFormKind('account');
           }}
           disabled={!data.portfolios.length}
         >
           <Plus size={16} />
           {t('Add manual account', 'เพิ่มบัญชีบันทึกเอง')}{' '}
-          {!proAccess && data.accounts.length > 0 && <span className="plan-badge">PRO</span>}
+          {!proAccess && data.accounts.length > 0 && (
+            <span className="plan-badge">PRO</span>
+          )}
         </button>
       </>
     );
@@ -251,6 +258,7 @@ export function AccountViews({
           )}
         </p>
       </div>
+      <SupportCenter mode={mode} t={t} />
       <div className="panel">
         <h2>{t('App preferences', 'การใช้งานแอป')}</h2>
         <div className="rule-row">
@@ -426,17 +434,39 @@ export function AccountViews({
           )}
         </p>
         {!proAccess && (
-          <div className="plan-usage" aria-label={t('Free plan usage', 'การใช้งานแพ็กเกจ Free')}>
+          <div
+            className="plan-usage"
+            aria-label={t('Free plan usage', 'การใช้งานแพ็กเกจ Free')}
+          >
             {[
-              [t('Trades', 'รายการเทรด'), data.trades.length, FREE_LIMITS.trades],
-              [t('Playbooks', 'Playbook'), data.playbooks?.length || 0, FREE_LIMITS.playbooks],
-              [t('Portfolios', 'พอร์ต'), data.portfolios.length, FREE_LIMITS.portfolios],
+              [
+                t('Trades', 'รายการเทรด'),
+                data.trades.length,
+                FREE_LIMITS.trades,
+              ],
+              [
+                t('Playbooks', 'Playbook'),
+                data.playbooks?.length || 0,
+                FREE_LIMITS.playbooks,
+              ],
+              [
+                t('Portfolios', 'พอร์ต'),
+                data.portfolios.length,
+                FREE_LIMITS.portfolios,
+              ],
             ].map(([label, used, limit]) => {
               const value = Math.min(100, (Number(used) / Number(limit)) * 100);
               return (
                 <div key={String(label)}>
-                  <span><b>{label}</b><small>{used} / {limit}</small></span>
-                  <i aria-hidden="true"><em style={{ width: `${value}%` }} /></i>
+                  <span>
+                    <b>{label}</b>
+                    <small>
+                      {used} / {limit}
+                    </small>
+                  </span>
+                  <i aria-hidden="true">
+                    <em style={{ width: `${value}%` }} />
+                  </i>
                 </div>
               );
             })}

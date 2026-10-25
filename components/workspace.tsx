@@ -103,6 +103,7 @@ import DailyCheckin from './daily-checkin';
 import WidgetStudio from './widget-studio';
 import TradoviaEdge from './tradovia-edge';
 import MonthlyReport from './monthly-report';
+import type { AppNotification } from '@/lib/support';
 import DecisionCoach from './decision-coach';
 import FirstRunOnboarding from './first-run-onboarding';
 import WorkspaceTour from './workspace-tour';
@@ -209,6 +210,8 @@ export default function Workspace({
     [formKind, setFormKind] = useState(''),
     [mobileMoreOpen, setMobileMoreOpen] = useState(false),
     [reminderOpen, setReminderOpen] = useState(false),
+    [notifications, setNotifications] = useState<AppNotification[]>([]),
+    [notificationUnread, setNotificationUnread] = useState(0),
     [firstRunOpen, setFirstRunOpen] = useState(false),
     [mobileLayout, setMobileLayout] = useState<boolean | null>(null);
   const t: Translate = (en, thai) => (th ? thai : en);
@@ -256,6 +259,21 @@ export default function Workspace({
       setError(e instanceof Error ? e.message : 'Unable to load');
     }
   }, [endpoint]);
+  const loadNotifications = useCallback(async () => {
+    if (mode === 'demo') return;
+    try {
+      const response = await fetch(`/api/notifications?mode=${mode}`);
+      if (!response.ok) return;
+      const value = (await response.json()) as {
+        notifications: AppNotification[];
+        unread: number;
+      };
+      setNotifications(value.notifications);
+      setNotificationUnread(value.unread);
+    } catch {
+      /* The workspace remains usable when the inbox is unavailable. */
+    }
+  }, [mode]);
   useEffect(() => {
     queueMicrotask(() => {
       void reload();
@@ -266,6 +284,12 @@ export default function Workspace({
       if (pages.some((p) => p[0] === hash)) setPage(hash);
     });
   }, [reload]);
+  useEffect(() => {
+    queueMicrotask(() => void loadNotifications());
+    if (mode === 'demo') return;
+    const timer = window.setInterval(() => void loadNotifications(), 120_000);
+    return () => window.clearInterval(timer);
+  }, [loadNotifications, mode]);
   useEffect(() => {
     const syncPage = () => {
       const hash = location.hash.slice(1);
@@ -407,7 +431,8 @@ export default function Workspace({
       ) ?? [],
     [data, portfolio],
   );
-  const proAccess = mode === 'demo' || Boolean(data && hasProAccess(data.subscription));
+  const proAccess =
+    mode === 'demo' || Boolean(data && hasProAccess(data.subscription));
   const trades = useMemo(
     () =>
       data?.trades.filter((tr) =>
@@ -430,11 +455,11 @@ export default function Workspace({
   const reminderKey = `${mode}:${data?.accounts.map((account) => account.id).join(',')}:${localClock?.date}:${prompt.title.en}`;
   const reminderUnread = Boolean(
     localClock &&
-      dismissedReminderKey !== reminderKey &&
-      reviewReminderDue(
-        `${String(localClock.hour).padStart(2, '0')}:${String(localClock.minute).padStart(2, '0')}`,
-        data?.profile.reviewReminder,
-      ),
+    dismissedReminderKey !== reminderKey &&
+    reviewReminderDue(
+      `${String(localClock.hour).padStart(2, '0')}:${String(localClock.minute).padStart(2, '0')}`,
+      data?.profile.reviewReminder,
+    ),
   );
   const capital = selectedAccounts.reduce((n, a) => n + a.balance, 0),
     s = statistics(trades, capital);
@@ -717,7 +742,9 @@ export default function Workspace({
               <ShieldCheck size={17} />
               <span>
                 {t('Admin operations', 'ศูนย์ดูแลระบบ')}
-                <small>{t('Customers and system health', 'ลูกค้าและสุขภาพระบบ')}</small>
+                <small>
+                  {t('Customers and system health', 'ลูกค้าและสุขภาพระบบ')}
+                </small>
               </span>
               <ArrowRight size={15} />
             </Link>
@@ -796,11 +823,16 @@ export default function Workspace({
             <button
               type="button"
               className="companion-trigger"
-              onClick={() => setReminderOpen(true)}
+              onClick={() => {
+                setReminderOpen(true);
+                void loadNotifications();
+              }}
               aria-label={t('Daily reminder', 'การแจ้งเตือนวันนี้')}
             >
               <Bell size={18} />
-              {reminderUnread && <span className="companion-unread" />}
+              {(reminderUnread || notificationUnread > 0) && (
+                <span className="companion-unread" />
+              )}
             </button>
             <button className="text-button" onClick={() => setTh(!th)}>
               {th ? 'EN' : 'TH'}
@@ -817,11 +849,16 @@ export default function Workspace({
           <button
             type="button"
             className="companion-trigger mobile-companion-trigger"
-            onClick={() => setReminderOpen(true)}
+            onClick={() => {
+              setReminderOpen(true);
+              void loadNotifications();
+            }}
             aria-label={t('Daily reminder', 'การแจ้งเตือนวันนี้')}
           >
             <Bell size={19} />
-            {reminderUnread && <span className="companion-unread" />}
+            {(reminderUnread || notificationUnread > 0) && (
+              <span className="companion-unread" />
+            )}
           </button>
           <button
             type="button"
@@ -886,7 +923,11 @@ export default function Workspace({
                     )}
               </p>
             </div>
-            <button className="button ink add-trade" onClick={addTrade} data-tour="add-trade">
+            <button
+              className="button ink add-trade"
+              onClick={addTrade}
+              data-tour="add-trade"
+            >
               <Plus size={17} />
               {t('Add trade', 'บันทึกการเทรด')}
             </button>
@@ -1209,9 +1250,12 @@ export default function Workspace({
                 </button>
                 <button
                   aria-pressed={journalView === 'gallery'}
-                  onClick={() => proAccess ? setJournalView('gallery') : navigate('settings')}
+                  onClick={() =>
+                    proAccess ? setJournalView('gallery') : navigate('settings')
+                  }
                 >
-                  {t('Chart gallery', 'แกลเลอรีกราฟ')} {!proAccess && <span className="plan-badge">PRO</span>}
+                  {t('Chart gallery', 'แกลเลอรีกราฟ')}{' '}
+                  {!proAccess && <span className="plan-badge">PRO</span>}
                 </button>
               </fieldset>
               <div className="journal-toolbar">
@@ -1239,29 +1283,34 @@ export default function Workspace({
                 />
                 <div className="journal-import" data-tour="import-trades">
                   {proAccess ? (
-                  <CsvImport
-                    open={importOpen}
-                    onOpenChange={setImportOpen}
-                    onOpenEdge={() => {
-                      setAnalysisTab('edge');
-                      navigate('analytics');
-                    }}
-                    onReviewImported={() => {
-                      setReviewRequested((request) => request + 1);
-                      navigate('journal');
-                    }}
-                    accounts={selectedAccounts}
-                    trades={data.trades}
-                    t={t}
-                    save={async (trades) => {
-                      const ok = await mutate('saveTrades', trades);
-                      if (ok) setReviewRequested((request) => request + 1);
-                      return ok;
-                    }}
-                  />
+                    <CsvImport
+                      open={importOpen}
+                      onOpenChange={setImportOpen}
+                      onOpenEdge={() => {
+                        setAnalysisTab('edge');
+                        navigate('analytics');
+                      }}
+                      onReviewImported={() => {
+                        setReviewRequested((request) => request + 1);
+                        navigate('journal');
+                      }}
+                      accounts={selectedAccounts}
+                      trades={data.trades}
+                      t={t}
+                      save={async (trades) => {
+                        const ok = await mutate('saveTrades', trades);
+                        if (ok) setReviewRequested((request) => request + 1);
+                        return ok;
+                      }}
+                    />
                   ) : (
-                    <button className="button ghost compact" type="button" onClick={() => navigate('settings')}>
-                      <Upload size={16} /> {t('Import report', 'นำเข้ารายงาน')} <span className="plan-badge">PRO</span>
+                    <button
+                      className="button ghost compact"
+                      type="button"
+                      onClick={() => navigate('settings')}
+                    >
+                      <Upload size={16} /> {t('Import report', 'นำเข้ารายงาน')}{' '}
+                      <span className="plan-badge">PRO</span>
                     </button>
                   )}
                 </div>
@@ -1299,11 +1348,17 @@ export default function Workspace({
           )}
           {page === 'calendar' && (
             <TradingCalendar
-              trades={proAccess ? trades : trades.filter((trade) => {
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - (FREE_LIMITS.calendarDays - 1));
-                return trade.date >= dateKey(cutoff);
-              })}
+              trades={
+                proAccess
+                  ? trades
+                  : trades.filter((trade) => {
+                      const cutoff = new Date();
+                      cutoff.setDate(
+                        cutoff.getDate() - (FREE_LIMITS.calendarDays - 1),
+                      );
+                      return trade.date >= dateKey(cutoff);
+                    })
+              }
               checkins={data.dailyCheckins}
               t={t}
               onView={setDetail}
@@ -1315,7 +1370,8 @@ export default function Workspace({
                 aria-pressed={analysisTab === 'edge'}
                 onClick={() => setAnalysisTab('edge')}
               >
-                Tradovia Edge {!proAccess && <span className="plan-badge">PRO</span>}
+                Tradovia Edge{' '}
+                {!proAccess && <span className="plan-badge">PRO</span>}
               </button>
               <button
                 aria-pressed={analysisTab === 'summary'}
@@ -1327,33 +1383,43 @@ export default function Workspace({
                 aria-pressed={analysisTab === 'deep'}
                 onClick={() => setAnalysisTab('deep')}
               >
-                Deep Analysis / Insights {!proAccess && <span className="plan-badge">PRO</span>}
+                Deep Analysis / Insights{' '}
+                {!proAccess && <span className="plan-badge">PRO</span>}
               </button>
               <button
                 aria-pressed={analysisTab === 'weekly'}
                 onClick={() => setAnalysisTab('weekly')}
               >
-                {t('Weekly review', 'สรุปรายสัปดาห์')} {!proAccess && <span className="plan-badge">PRO</span>}
+                {t('Weekly review', 'สรุปรายสัปดาห์')}{' '}
+                {!proAccess && <span className="plan-badge">PRO</span>}
               </button>
               <button
                 aria-pressed={analysisTab === 'monthly'}
                 onClick={() => setAnalysisTab('monthly')}
               >
-                {t('Monthly report', 'สรุปรายเดือน')} {!proAccess && <span className="plan-badge">PRO</span>}
+                {t('Monthly report', 'สรุปรายเดือน')}{' '}
+                {!proAccess && <span className="plan-badge">PRO</span>}
               </button>
               <button
                 aria-pressed={analysisTab === 'report'}
                 onClick={() => setAnalysisTab('report')}
               >
-                {t('Account report', 'รายงานบัญชี')} {!proAccess && <span className="plan-badge">PRO</span>}
+                {t('Account report', 'รายงานบัญชี')}{' '}
+                {!proAccess && <span className="plan-badge">PRO</span>}
               </button>
             </div>
           )}
           {page === 'analytics' && analysisTab !== 'summary' && !proAccess && (
             <PlanGate
               t={t}
-              title={t('Turn history into your edge', 'เปลี่ยนประวัติให้เป็นความได้เปรียบ')}
-              description={t('Pro unlocks Deep Analysis, Tradovia Edge, weekly and monthly reviews, and complete account reports.', 'Pro ปลดล็อก Deep Analysis, Tradovia Edge, สรุปรายสัปดาห์และเดือน และรายงานบัญชีแบบเต็ม')}
+              title={t(
+                'Turn history into your edge',
+                'เปลี่ยนประวัติให้เป็นความได้เปรียบ',
+              )}
+              description={t(
+                'Pro unlocks Deep Analysis, Tradovia Edge, weekly and monthly reviews, and complete account reports.',
+                'Pro ปลดล็อก Deep Analysis, Tradovia Edge, สรุปรายสัปดาห์และเดือน และรายงานบัญชีแบบเต็ม',
+              )}
             />
           )}
           {page === 'analytics' && analysisTab === 'report' && proAccess && (
@@ -1827,6 +1893,75 @@ export default function Workspace({
               'หนึ่งคำแนะนำจากบันทึกของคุณ ไม่จำเป็นต้องเทรดทุกวัน',
             )}
           </p>
+          <section
+            className="notification-center"
+            aria-label={t('Notifications', 'การแจ้งเตือน')}
+          >
+            <div className="notification-heading">
+              <div>
+                <span className="companion-dialog-eyebrow">
+                  {t('INBOX', 'กล่องข้อความ')}
+                </span>
+                <h3>{t('Notifications', 'การแจ้งเตือน')}</h3>
+              </div>
+              {notificationUnread > 0 && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={async () => {
+                    await fetch(`/api/notifications?mode=${mode}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'readAll' }),
+                    });
+                    await loadNotifications();
+                  }}
+                >
+                  {t('Mark all read', 'อ่านทั้งหมด')}
+                </button>
+              )}
+            </div>
+            <div className="notification-list">
+              {notifications.length ? (
+                notifications.map((item) => (
+                  <button
+                    type="button"
+                    className={item.readAt ? '' : 'unread'}
+                    key={item.id}
+                    onClick={async () => {
+                      if (!item.readAt)
+                        await fetch(`/api/notifications?mode=${mode}`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'read', id: item.id }),
+                        });
+                      setReminderOpen(false);
+                      if (item.link)
+                        window.location.hash = item.link.replace(/^#/, '');
+                      await loadNotifications();
+                    }}
+                  >
+                    <span>
+                      <b>{item.title}</b>
+                      <small>{item.body}</small>
+                    </span>
+                    <time>
+                      {new Intl.DateTimeFormat(th ? 'th-TH' : 'en', {
+                        dateStyle: 'medium',
+                      }).format(item.createdAt)}
+                    </time>
+                  </button>
+                ))
+              ) : (
+                <p className="notification-empty">
+                  {t(
+                    'No messages yet. Replies from the Tradovia team will appear here.',
+                    'ยังไม่มีข้อความใหม่ คำตอบจากทีม Tradovia จะแสดงที่นี่',
+                  )}
+                </p>
+              )}
+            </div>
+          </section>
         </DialogContent>
       </Dialog>
       {toast && (

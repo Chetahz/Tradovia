@@ -63,8 +63,15 @@ export async function POST(request: Request) {
     avatarVersion || undefined,
   );
   await db.batch([
-    db.prepare('DELETE FROM customer_support_notes WHERE owner_id=?').bind(ownerId),
-    db.prepare('DELETE FROM admin_audit_events WHERE target_id=?').bind(ownerId),
+    db.prepare('DELETE FROM notifications WHERE owner_id=?').bind(ownerId),
+    db.prepare('DELETE FROM support_messages WHERE owner_id=?').bind(ownerId),
+    db.prepare('DELETE FROM support_tickets WHERE owner_id=?').bind(ownerId),
+    db
+      .prepare('DELETE FROM customer_support_notes WHERE owner_id=?')
+      .bind(ownerId),
+    db
+      .prepare('DELETE FROM admin_audit_events WHERE target_id=?')
+      .bind(ownerId),
     db.prepare('DELETE FROM ops_events WHERE owner_id=?').bind(ownerId),
   ]);
 
@@ -84,7 +91,9 @@ export async function POST(request: Request) {
   // Settings instead of being stranded with an undeletable identity.
   await db.batch([
     db.prepare('DELETE FROM users WHERE id=?').bind(ownerId),
-    db.prepare('DELETE FROM auth_sessions WHERE subject=?').bind(session.subject),
+    db
+      .prepare('DELETE FROM auth_sessions WHERE subject=?')
+      .bind(session.subject),
   ]);
 
   const jar = await cookies();

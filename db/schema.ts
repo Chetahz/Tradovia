@@ -5,13 +5,17 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-export const authSessions = sqliteTable('auth_sessions', {
-  id: text('id').primaryKey(),
-  subject: text('subject').notNull(),
-  email: text('email').notNull(),
-  displayName: text('display_name').notNull(),
-  expiresAt: integer('expires_at').notNull(),
-}, (t) => [index('auth_sessions_expiry').on(t.expiresAt)]);
+export const authSessions = sqliteTable(
+  'auth_sessions',
+  {
+    id: text('id').primaryKey(),
+    subject: text('subject').notNull(),
+    email: text('email').notNull(),
+    displayName: text('display_name').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+  },
+  (t) => [index('auth_sessions_expiry').on(t.expiresAt)],
+);
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   mode: text('mode').notNull(),
@@ -33,11 +37,17 @@ const owned = () => ({
 export const portfolios = sqliteTable('portfolios', owned(), (t) => [
   index('portfolio_owner').on(t.ownerId),
 ]);
-export const playbooks = sqliteTable('playbooks', owned(), (t) => [index('playbook_owner').on(t.ownerId)]);
-export const dailyCheckins = sqliteTable('daily_checkins', {
-  ...owned(),
-  date: text('checkin_date').notNull(),
-}, (t) => [index('daily_checkin_owner_date').on(t.ownerId, t.date)]);
+export const playbooks = sqliteTable('playbooks', owned(), (t) => [
+  index('playbook_owner').on(t.ownerId),
+]);
+export const dailyCheckins = sqliteTable(
+  'daily_checkins',
+  {
+    ...owned(),
+    date: text('checkin_date').notNull(),
+  },
+  (t) => [index('daily_checkin_owner_date').on(t.ownerId, t.date)],
+);
 export const accounts = sqliteTable(
   'trading_accounts',
   {
@@ -89,14 +99,25 @@ export const brokerConnections = sqliteTable(
   },
   (t) => [index('connection_owner').on(t.ownerId)],
 );
-export const mt5Credentials = sqliteTable('mt5_credentials', {
-  connectionId: text('connection_id').primaryKey().references(() => brokerConnections.id, { onDelete: 'cascade' }),
-  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull(),
-  login: text('login'),
-  server: text('server'),
-  createdAt: integer('created_at').notNull(),
-}, (t) => [uniqueIndex('mt5_credentials_token').on(t.tokenHash), index('mt5_credentials_owner').on(t.ownerId)]);
+export const mt5Credentials = sqliteTable(
+  'mt5_credentials',
+  {
+    connectionId: text('connection_id')
+      .primaryKey()
+      .references(() => brokerConnections.id, { onDelete: 'cascade' }),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    login: text('login'),
+    server: text('server'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [
+    uniqueIndex('mt5_credentials_token').on(t.tokenHash),
+    index('mt5_credentials_owner').on(t.ownerId),
+  ],
+);
 export const subscriptions = sqliteTable('subscriptions', {
   ownerId: text('owner_id')
     .primaryKey()
@@ -124,39 +145,111 @@ export const webhookEvents = sqliteTable('webhook_events', {
   eventType: text('event_type'),
   status: text('status'),
 });
-export const opsEvents = sqliteTable('ops_events', {
-  id: text('id').primaryKey(),
-  ownerId: text('owner_id'),
-  category: text('category').notNull(),
-  severity: text('severity').notNull(),
-  status: text('status').notNull(),
-  message: text('message').notNull(),
-  metadata: text('metadata').notNull(),
-  createdAt: integer('created_at').notNull(),
-  resolvedAt: integer('resolved_at'),
-  resolutionNote: text('resolution_note'),
-  updatedAt: integer('updated_at'),
-}, (t) => [
-  index('ops_events_created').on(t.createdAt),
-  index('ops_events_owner').on(t.ownerId, t.createdAt),
-  index('ops_events_category_status').on(t.category, t.status, t.createdAt),
-]);
-export const customerSupportNotes = sqliteTable('customer_support_notes', {
-  id: text('id').primaryKey(),
-  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  actorId: text('actor_id').notNull(),
-  note: text('note').notNull(),
-  createdAt: integer('created_at').notNull(),
-}, (t) => [index('support_notes_owner_created').on(t.ownerId, t.createdAt)]);
-export const adminAuditEvents = sqliteTable('admin_audit_events', {
-  id: text('id').primaryKey(),
-  actorId: text('actor_id').notNull(),
-  action: text('action').notNull(),
-  targetType: text('target_type').notNull(),
-  targetId: text('target_id'),
-  metadata: text('metadata').notNull(),
-  createdAt: integer('created_at').notNull(),
-}, (t) => [
-  index('admin_audit_created').on(t.createdAt),
-  index('admin_audit_actor').on(t.actorId, t.createdAt),
-]);
+export const opsEvents = sqliteTable(
+  'ops_events',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id'),
+    category: text('category').notNull(),
+    severity: text('severity').notNull(),
+    status: text('status').notNull(),
+    message: text('message').notNull(),
+    metadata: text('metadata').notNull(),
+    createdAt: integer('created_at').notNull(),
+    resolvedAt: integer('resolved_at'),
+    resolutionNote: text('resolution_note'),
+    updatedAt: integer('updated_at'),
+  },
+  (t) => [
+    index('ops_events_created').on(t.createdAt),
+    index('ops_events_owner').on(t.ownerId, t.createdAt),
+    index('ops_events_category_status').on(t.category, t.status, t.createdAt),
+  ],
+);
+export const customerSupportNotes = sqliteTable(
+  'customer_support_notes',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    actorId: text('actor_id').notNull(),
+    note: text('note').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [index('support_notes_owner_created').on(t.ownerId, t.createdAt)],
+);
+export const adminAuditEvents = sqliteTable(
+  'admin_audit_events',
+  {
+    id: text('id').primaryKey(),
+    actorId: text('actor_id').notNull(),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id'),
+    metadata: text('metadata').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [
+    index('admin_audit_created').on(t.createdAt),
+    index('admin_audit_actor').on(t.actorId, t.createdAt),
+  ],
+);
+export const supportTickets = sqliteTable(
+  'support_tickets',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    category: text('category').notNull(),
+    subject: text('subject').notNull(),
+    status: text('status').notNull(),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    closedAt: integer('closed_at'),
+  },
+  (t) => [
+    index('support_tickets_owner_updated').on(t.ownerId, t.updatedAt),
+    index('support_tickets_status_updated').on(t.status, t.updatedAt),
+  ],
+);
+export const supportMessages = sqliteTable(
+  'support_messages',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticket_id')
+      .notNull()
+      .references(() => supportTickets.id, { onDelete: 'cascade' }),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    authorType: text('author_type').notNull(),
+    authorId: text('author_id').notNull(),
+    body: text('body').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [
+    index('support_messages_ticket_created').on(t.ticketId, t.createdAt),
+    index('support_messages_owner_created').on(t.ownerId, t.createdAt),
+  ],
+);
+export const notifications = sqliteTable(
+  'notifications',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    link: text('link').notNull(),
+    readAt: integer('read_at'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [
+    index('notifications_owner_created').on(t.ownerId, t.createdAt),
+    index('notifications_owner_unread').on(t.ownerId, t.readAt, t.createdAt),
+  ],
+);
